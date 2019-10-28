@@ -20,6 +20,7 @@ def make_file(file_name):
 	return response.json()
 
 
+# TODO: remove duplicate code
 def map(json_data_obj):
 	mapper = json_data_obj["mapper"]
 	key_delimiter = json_data_obj["key_delimiter"]
@@ -54,6 +55,7 @@ def map(json_data_obj):
 	return response.json()
 
 
+# TODO: remove duplicate code
 def reduce(json_data_obj):
 	key_delimiter = json_data_obj["key_delimiter"]
 	destination_file = json_data_obj["destination_file"]
@@ -86,6 +88,7 @@ def reduce(json_data_obj):
 	return response.json()
 
 
+# TODO: use context manager
 def clear_data(context):
 	json_data = open(os.path.join(os.path.dirname(__file__), '..', 'config', 'json', 'data_nodes.json'))
 	data = json.load(json_data)
