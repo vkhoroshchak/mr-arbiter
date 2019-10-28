@@ -1,12 +1,12 @@
 # TODO: order imports
-# TODO: use literals instead of dict() and list()
 # TODO: check if **kwargs may be used in recognize_command()
 
 import json
 import os
-import requests
 from http import server
 from multiprocessing import Process
+
+import requests
 
 from communication import send_requests
 
@@ -19,8 +19,8 @@ data_nodes_data_json = json.load(data_nodes_file)
 # TODO: wrap global bars in class
 N = len(data_nodes_data_json['data_nodes'])
 counter = 0
-list_of_min = list()
-list_of_max = list()
+list_of_min = []
+list_of_max = []
 
 
 class Handler(server.BaseHTTPRequestHandler):
@@ -45,14 +45,14 @@ class Handler(server.BaseHTTPRequestHandler):
         self.wfile.write(bytes(json.dumps(self.recognize_command(json_data_obj)), 'utf-8'))
 
     def recognize_command(self, content):
-        json_data_obj = dict()
+        json_data_obj = {}
 
         if 'make_file' in content:
             json_data_obj = content['make_file']
             send_requests.make_file(json_data_obj["destination_file"])
-            file_info = dict()
+            file_info = {}
             # TODO: initialize and append to list at the same time
-            file_info['files'] = list()
+            file_info['files'] = []
             file_info['files'].append(
                 {
                     "file_name": json_data_obj["destination_file"],
@@ -77,33 +77,33 @@ class Handler(server.BaseHTTPRequestHandler):
         elif 'append' in content:
             json_data_obj = content['append']
             file_name = json_data_obj['file_name']
-            json_data_obj = dict()
-            # TODO: use context manager
-            files_info_file = open(os.path.join(os.path.dirname(__file__), 'data', 'files_info.json'))
-            files_info_file_json = json.load(files_info_file)
-            files_info_file.close()
+            json_data_obj = {}
+            with open(os.path.join(os.path.dirname(__file__), 'data', 'files_info.json')) as files_info_file:
+                files_info_file_json = json.load(files_info_file)
 
-            for item in files_info_file_json['files']:
-                if item['file_name'] == file_name:
-                    if not item['file_fragments']:
-                        json_data_obj['data_node_ip'] = 'http://' + data_nodes_data_json['data_nodes'][0][
-                            'data_node_address']
-                    else:
-                        id = 1
+                for item in files_info_file_json['files']:
+                    if item['file_name'] == file_name:
+                        if not item['file_fragments']:
+                            json_data_obj['data_node_ip'] = 'http://' + data_nodes_data_json['data_nodes'][0][
+                                'data_node_address']
+                        else:
+                            id = 1
 
-                        for key, value in (item['file_fragments'][-1]).items():
-                            id = key
+                            for key, value in (item['file_fragments'][-1]).items():
+                                id = key
 
-                        for i in data_nodes_data_json['data_nodes']:
-                            if i['data_node_id'] == int(id):
-                                prev_ind = data_nodes_data_json['data_nodes'].index(i)
-                                if prev_ind + 1 == len(data_nodes_data_json['data_nodes']):
-                                    json_data_obj['data_node_ip'] = 'http://' + data_nodes_data_json['data_nodes'][0][
-                                        'data_node_address']
-                                else:
-                                    json_data_obj['data_node_ip'] = 'http://' + \
-                                                                    data_nodes_data_json['data_nodes'][prev_ind + 1][
-                                                                        'data_node_address']
+                            for i in data_nodes_data_json['data_nodes']:
+                                if i['data_node_id'] == int(id):
+                                    prev_ind = data_nodes_data_json['data_nodes'].index(i)
+                                    if prev_ind + 1 == len(data_nodes_data_json['data_nodes']):
+                                        json_data_obj['data_node_ip'] = 'http://' + \
+                                                                        data_nodes_data_json['data_nodes'][0][
+                                                                            'data_node_address']
+                                    else:
+                                        json_data_obj['data_node_ip'] = 'http://' + \
+                                                                        data_nodes_data_json['data_nodes'][
+                                                                            prev_ind + 1][
+                                                                            'data_node_address']
 
             # TODO: check and refactor
         elif 'refresh_table' in content:
@@ -161,24 +161,23 @@ class Handler(server.BaseHTTPRequestHandler):
                     })
                     mid_hash += step
 
-                # TODO: use context manager
-                files_info_file = open(os.path.join(os.path.dirname(__file__), 'data', 'files_info.json'))
-                files_info_file_json = json.load(files_info_file)
-                files_info_file.close()
-                for i in files_info_file_json['files']:
-                    arr = json_data_obj['file_name'].split('.')
-                    file_name = arr[0].split('_')[0] + '.' + arr[-1]
-                    if file_name == i['file_name'].split(os.sep)[-1]:
-                        print(context['shuffle']['nodes_keys'])
-                        i['key_ranges'] = context['shuffle']['nodes_keys']
+                with open(os.path.join(os.path.dirname(__file__), 'data', 'files_info.json')) as files_info_file:
+                    files_info_file_json = json.load(files_info_file)
 
-                with open(os.path.join(os.path.dirname(__file__), 'data', 'files_info.json'), 'w')as file:
-                    json.dump(files_info_file_json, file, indent=4)
+                    for i in files_info_file_json['files']:
+                        arr = json_data_obj['file_name'].split('.')
+                        file_name = arr[0].split('_')[0] + '.' + arr[-1]
+                        if file_name == i['file_name'].split(os.sep)[-1]:
+                            print(context['shuffle']['nodes_keys'])
+                            i['key_ranges'] = context['shuffle']['nodes_keys']
 
-                for i in data_nodes_data_json['data_nodes']:
-                    url = 'http://' + i["data_node_address"]
-                    response = requests.post(url, data=json.dumps(context))
-                counter = 0
+                    with open(os.path.join(os.path.dirname(__file__), 'data', 'files_info.json'), 'w')as file:
+                        json.dump(files_info_file_json, file, indent=4)
+
+                    for i in data_nodes_data_json['data_nodes']:
+                        url = 'http://' + i["data_node_address"]
+                        response = requests.post(url, data=json.dumps(context))
+                    counter = 0
 
         elif 'clear_data' in content:
             send_requests.clear_data(content)
@@ -186,8 +185,8 @@ class Handler(server.BaseHTTPRequestHandler):
         elif 'get_file' in content:
             json_data_obj = content['get_file']
             file_name = json_data_obj['file_name']
-            context = dict()
-            context['data_nodes_ip'] = list()
+            context = {}
+            context['data_nodes_ip'] = []
             for i in data_nodes_data_json['data_nodes']:
                 url = 'http://' + i["data_node_address"]
                 context['data_nodes_ip'].append(url)
@@ -197,20 +196,20 @@ class Handler(server.BaseHTTPRequestHandler):
             json_data_obj = content['get_result_of_key']
             key = json_data_obj['key']
             file_name = json_data_obj['file_name']
-            context = dict()
-            # TODO: use context manager
-            files_info_file = open(os.path.join(os.path.dirname(__file__), 'data', 'files_info.json'))
-            files_info_file_json = json.load(files_info_file)
-            files_info_file.close()
-            json_data_obj.clear()
-            for item in files_info_file_json['files']:
-                if item['file_name'] == file_name:
-                    json_data_obj["key_ranges"] = item["key_ranges"]
-            url = 'http://' + data_nodes_data_json['data_nodes'][0]["data_node_address"]
-            context['get_hash_of_key'] = key
-            response = requests.post(url, data=json.dumps(context))
-            json_data_obj['hash_key'] = response.json()
-        return json_data_obj
+            context = {}
+            with open(os.path.join(os.path.dirname(__file__), 'data', 'files_info.json')) as files_info_file:
+                files_info_file_json = json.load(files_info_file)
+                json_data_obj.clear()
+
+                for item in files_info_file_json['files']:
+                    if item['file_name'] == file_name:
+                        json_data_obj["key_ranges"] = item["key_ranges"]
+                url = 'http://' + data_nodes_data_json['data_nodes'][0]["data_node_address"]
+                context['get_hash_of_key'] = key
+                response = requests.post(url, data=json.dumps(context))
+                json_data_obj['hash_key'] = response.json()
+
+            return json_data_obj
 
 
 def start_server(server_address):
