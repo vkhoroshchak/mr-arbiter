@@ -1,4 +1,3 @@
-# TODO: order imports
 # TODO: check if **kwargs may be used in recognize_command()
 
 import json
@@ -10,17 +9,19 @@ import requests
 
 from communication import send_requests
 
-# TODO: use context manager
-data_nodes_file = open(os.path.join(os.path.dirname(__file__), 'config', 'json', 'data_nodes.json'))
-data_nodes_data_json = json.load(data_nodes_file)
+with open(os.path.join(os.path.dirname(__file__), 'config', 'json', 'data_nodes.json')) as data_nodes_file:
+    data_nodes_data_json = json.load(data_nodes_file)
+
+
 # files_info_file = open(os.path.join(os.path.dirname(__file__), 'data', 'files_info.json'))
 # files_info_file_json = json.load(files_info_file)
 
-# TODO: wrap global bars in class
-N = len(data_nodes_data_json['data_nodes'])
-counter = 0
-list_of_min = []
-list_of_max = []
+# TODO: wrap global vars in class
+class SomeClass:
+    N = len(data_nodes_data_json['data_nodes'])
+    counter = 0
+    list_of_min = []
+    list_of_max = []
 
 
 class Handler(server.BaseHTTPRequestHandler):
@@ -50,18 +51,29 @@ class Handler(server.BaseHTTPRequestHandler):
         if 'make_file' in content:
             json_data_obj = content['make_file']
             send_requests.make_file(json_data_obj["destination_file"])
-            file_info = {}
+            file_info = {
+                "files": [
+                    {
+
+                        "file_name": json_data_obj["destination_file"],
+                        "lock": False,
+                        "last_fragment_block_size": 1024,
+                        "key_ranges": None,
+                        "file_fragments": []
+                    }
+                ]
+            }
             # TODO: initialize and append to list at the same time
-            file_info['files'] = []
-            file_info['files'].append(
-                {
-                    "file_name": json_data_obj["destination_file"],
-                    "lock": False,
-                    "last_fragment_block_size": 1024,
-                    "key_ranges": None,
-                    "file_fragments": []
-                }
-            )
+            # file_info['files'] = []
+            # file_info['files'].append(
+            #     {
+            #         "file_name": json_data_obj["destination_file"],
+            #         "lock": False,
+            #         "last_fragment_block_size": 1024,
+            #         "key_ranges": None,
+            #         "file_fragments": []
+            #     }
+            # )
             with open(os.path.join(os.path.dirname(__file__), 'data', 'files_info.json'), 'w+') as file:
                 json.dump(file_info, file, indent=4)
 
@@ -128,18 +140,16 @@ class Handler(server.BaseHTTPRequestHandler):
 
         elif 'hash' in content:
             json_data_obj = content['hash']
-            list_of_max.append(json_data_obj['list_keys'][0])
-            list_of_min.append(json_data_obj['list_keys'][1])
+            SomeClass.list_of_max.append(json_data_obj['list_keys'][0])
+            SomeClass.list_of_min.append(json_data_obj['list_keys'][1])
 
             # TODO: implement through class
-            global counter
-            global N
-            counter += 1
+            SomeClass.counter += 1
 
-            if counter == N:
-                max_hash = max(list_of_max)
-                min_hash = min(list_of_min)
-                step = (max_hash - min_hash) / N
+            if SomeClass.counter == SomeClass.N:
+                max_hash = max(SomeClass.list_of_max)
+                min_hash = min(SomeClass.list_of_min)
+                step = (max_hash - min_hash) / SomeClass.N
                 context = {
                     'shuffle': {
                         'nodes_keys': [],
@@ -148,10 +158,10 @@ class Handler(server.BaseHTTPRequestHandler):
                     }
                 }
                 mid_hash = min_hash
-                counter = 0
+                SomeClass.counter = 0
                 for i in data_nodes_data_json['data_nodes']:
-                    counter += 1
-                    if counter == N:
+                    SomeClass.counter += 1
+                    if SomeClass.counter == SomeClass.N:
                         end_hash = max_hash
                     else:
                         end_hash = mid_hash + step
@@ -209,7 +219,7 @@ class Handler(server.BaseHTTPRequestHandler):
                 response = requests.post(url, data=json.dumps(context))
                 json_data_obj['hash_key'] = response.json()
 
-            return json_data_obj
+        return json_data_obj
 
 
 def start_server(server_address):
