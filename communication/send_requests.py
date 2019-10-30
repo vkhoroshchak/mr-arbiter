@@ -49,6 +49,9 @@ def map(json_data_obj):
 
 
 def reduce(json_data_obj):
+    print("+++")
+    print(json_data_obj)
+    print('+++')
     key_delimiter = json_data_obj["key_delimiter"]
     destination_file = json_data_obj["destination_file"]
     reducer = json_data_obj['reducer']
