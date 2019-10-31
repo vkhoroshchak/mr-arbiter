@@ -5,13 +5,16 @@ import requests
 
 from communication import send_requests
 
-with open(os.path.join(os.path.dirname(__file__), '..', 'config', 'json', 'data_nodes.json')) as data_nodes_file:
+config_data_nodes_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'json', 'data_nodes.json')
+files_info_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'files_info.json')
+
+with open(config_data_nodes_path) as data_nodes_file:
     data_nodes_data_json = json.load(data_nodes_file)
 
-with open(os.path.join(os.path.dirname(__file__), '..', 'data', 'files_info.json')) as files_info_file:
+with open(files_info_path) as files_info_file:
     files_info_file_json = json.load(files_info_file)
-    
-with open(os.path.join(os.path.dirname(__file__), '..', 'data', 'files_info.json')) as file:
+
+with open(files_info_path) as file:
     file_info = json.loads(file.read())
 
 
@@ -46,7 +49,7 @@ class Command:
                 }
             ]
         }
-        with open(os.path.join(os.path.dirname(__file__), '..', 'data', 'files_info.json'), 'w+') as file:
+        with open(files_info_path, 'w+') as file:
             json.dump(file_info, file, indent=4)
 
         Command.json_data_obj.clear()
@@ -64,7 +67,7 @@ class Command:
     def append(content):
         Command.json_data_obj = content['append']
         file_name = Command.json_data_obj['file_name']
-        Command.json_data_obj = {}   
+        Command.json_data_obj = {}
         for item in files_info_file_json['files']:
             if item['file_name'] == file_name:
                 if not item['file_fragments']:
@@ -93,7 +96,6 @@ class Command:
     @staticmethod
     def refresh_table(content):
         Command.json_data_obj = content['refresh_table']
-        
 
         for item in file_info['files']:
             if item['file_name'] == Command.json_data_obj['file_name']:
@@ -107,7 +109,7 @@ class Command:
                         id: Command.json_data_obj['segment_name']
                     }
                 )
-        with open(os.path.join(os.path.dirname(__file__), '..', 'data', 'files_info.json'), 'w')as file:
+        with open(files_info_path, 'w') as file:
             json.dump(file_info, file, indent=4)
 
     @staticmethod
@@ -143,8 +145,6 @@ class Command:
                 })
                 mid_hash += step
 
-            
-
             for i in files_info_file_json['files']:
                 arr = Command.json_data_obj['file_name'].split('.')
                 file_name = arr[0].split('_')[0] + '.' + arr[-1]
@@ -152,7 +152,7 @@ class Command:
                     print(context['shuffle']['nodes_keys'])
                     i['key_ranges'] = context['shuffle']['nodes_keys']
 
-            with open(os.path.join(os.path.dirname(__file__), '..', 'data', 'files_info.json'), 'w')as file:
+            with open(files_info_path, 'w')as file:
                 json.dump(files_info_file_json, file, indent=4)
 
             for i in data_nodes_data_json['data_nodes']:
@@ -163,7 +163,7 @@ class Command:
     @staticmethod
     def get_file(content):
         Command.json_data_obj = content['get_file']
-        file_name = Command.json_data_obj['file_name']
+        # file_name = Command.json_data_obj['file_name']
         context = {'data_nodes_ip': []}
         for i in data_nodes_data_json['data_nodes']:
             url = 'http://' + i['data_node_address']
@@ -176,7 +176,7 @@ class Command:
         key = Command.json_data_obj['key']
         file_name = Command.json_data_obj['file_name']
         context = {}
-        
+
         Command.json_data_obj.clear()
 
         for item in files_info_file_json['files']:
