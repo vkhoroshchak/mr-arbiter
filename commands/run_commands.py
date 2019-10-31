@@ -46,17 +46,6 @@ class Command:
                 }
             ]
         }
-        # TODO: initialize and append to list at the same time
-        # file_info['files'] = []
-        # file_info['files'].append(
-        #     {
-        #         'file_name': json_data_obj['destination_file'],
-        #         'lock': False,
-        #         'last_fragment_block_size': 1024,
-        #         'key_ranges': None,
-        #         'file_fragments': []
-        #     }
-        # )
         with open(os.path.join(os.path.dirname(__file__), '..', 'data', 'files_info.json'), 'w+') as file:
             json.dump(file_info, file, indent=4)
 
@@ -127,7 +116,6 @@ class Command:
         SomeClass.list_of_max.append(Command.json_data_obj['list_keys'][0])
         SomeClass.list_of_min.append(Command.json_data_obj['list_keys'][1])
 
-        # TODO: implement through class
         SomeClass.counter += 1
 
         if SomeClass.counter == SomeClass.N:
