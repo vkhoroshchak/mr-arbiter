@@ -1,38 +1,111 @@
 import json
-
+import os
+from flask import Flask, request, make_response, jsonify
 from commands import run_commands
-from http import server
-from multiprocessing import Process
+from communication import send_requests
+
+app = Flask(__name__)
+
+config_data_nodes_path = os.path.join(os.path.dirname(__file__), 'config', 'json', 'data_nodes.json')
+files_info_path = os.path.join(os.path.dirname(__file__), 'data', 'files_info.json')
+
+with open(config_data_nodes_path) as data_nodes_file:
+    data_nodes_data_json = json.load(data_nodes_file)
+
+with open(files_info_path) as files_info_file:
+    files_info_file_json = json.load(files_info_file)
+
+with open(files_info_path) as file:
+    file_info = json.loads(file.read())
 
 
-class Handler(server.BaseHTTPRequestHandler):
+@app.route('/command/make_file', methods=['POST'])
+def make_file():
+    file_name = request.json['file_name']
+    # send_requests.make_file(file_name)
 
-    def do_POST(self):
-        self.send_response(200)
-        self.end_headers()
-        body_length = int(self.headers['content-length'])
-        request_body_json_string = self.rfile.read(body_length).decode('utf-8')
+    files_info = {
+        'files': [
+            {
 
-        # Printing  some info to the server console
-        print('Server on port ' + str(self.server.server_port) + ' - request body: ' + request_body_json_string)
+                'file_name': file_name,
+                'lock': False,
+                'last_fragment_block_size': 1024,
+                'key_ranges': None,
+                'file_fragments': []
+            }
+        ]
+    }
+    with open(files_info_path, 'w+') as file:
+        json.dump(files_info, file, indent=4)
 
-        json_data_obj = json.loads(request_body_json_string)
-        json_data_obj['SEEN_BY_THE_SERVER'] = 'Yes'
-
-        # Sending data to the client
-        self.wfile.write(bytes(json.dumps(run_commands.Command.recognize_command(json_data_obj)), 'utf-8'))
-
-
-def start_server(server_address):
-    my_server = server.ThreadingHTTPServer(server_address, Handler)
-    print(str(server_address) + ' Waiting for POST requests...')
-    my_server.serve_forever()
+    return jsonify({'distribution': data_nodes_data_json['distribution']})
 
 
-def start_local_server_on_port(port):
-    p = Process(target=start_server, args=(('127.0.0.1', port),))
-    p.start()
+@app.route('/command/append', methods=['GET'])
+def append():
+    file_name = request.json['file_name']
+    response = {}
+    for item in files_info_file_json['files']:
+        if item['file_name'] == file_name:
+            if not item['file_fragments']:
+                response['data_node_ip'] = 'http://' + data_nodes_data_json['data_nodes'][0][
+                    'data_node_address']
+            else:
+                id = 1
+
+                for key, value in (item['file_fragments'][-1]).items():
+                    id = key
+
+                for i in data_nodes_data_json['data_nodes']:
+                    if i['data_node_id'] == int(id):
+                        prev_ind = data_nodes_data_json['data_nodes'].index(i)
+                        if prev_ind + 1 == len(data_nodes_data_json['data_nodes']):
+                            response['data_node_ip'] = 'http://' + \
+                                                       data_nodes_data_json['data_nodes'][0][
+                                                           'data_node_address']
+                        else:
+                            response['data_node_ip'] = 'http://' + \
+                                                       data_nodes_data_json['data_nodes'][
+                                                           prev_ind + 1][
+                                                           'data_node_address']
+    return jsonify(response)
+
+
+def map_reduce():
+    send_requests.map(request.json['map_reduce'])
+    send_requests.reduce(request.json['map_reduce'])
+
+
+@app.route("/command/refresh_table", methods=["GET"])
+def refresh_table():
+    for item in file_info['files']:
+        if item['file_name'] == request.json['file_name']:
+            id = ''
+            for i in data_nodes_data_json['data_nodes']:
+
+                if i['data_node_address'] == request.json['ip'].split('//')[-1]:
+                    id = i['data_node_id']
+            item['file_fragments'].append(
+                {
+                    id: request.json['segment_name']
+                }
+            )
+    with open(files_info_path, 'w') as file:
+        json.dump(file_info, file, indent=4)
+
+    return jsonify(success=True)
+
+
+@app.route('/command/get_file', methods=['GET'])
+def get_file():
+    context = {'data_nodes_ip': []}
+    for i in data_nodes_data_json['data_nodes']:
+        url = 'http://' + i['data_node_address']
+        context['data_nodes_ip'].append(url)
+
+    return jsonify(context)
 
 
 if __name__ == '__main__':
-    start_local_server_on_port(8011)
+    app.run(host='127.0.0.1', port=5001)
