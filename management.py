@@ -87,9 +87,15 @@ def refresh_table():
     return jsonify(success=True)
 
 
-def map_reduce():
-    send_requests.map(request.json['map_reduce'])
-    send_requests.reduce(request.json['map_reduce'])
+@app.route("/command/map", methods=["POST"])
+def map():
+    return send_requests.map(request.json)
+
+
+@app.route("/command/reduce", methods=["POST"])
+def reduce():
+    send_requests.reduce(request.json)
+    return jsonify(success=True)
 
 
 @app.route('/command/get_file', methods=['GET'])

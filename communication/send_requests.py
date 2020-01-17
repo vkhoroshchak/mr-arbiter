@@ -16,19 +16,17 @@ def make_file(file_name):
 
 def map(json_data_obj):
     diction = {
-        'map': {
-            'mapper': json_data_obj['mapper'],
-            'field_delimiter': json_data_obj['field_delimiter'],
-            'key_delimiter': json_data_obj['key_delimiter'],
-            'destination_file': json_data_obj['destination_file']
-        }
+        'mapper': json_data_obj['mapper'],
+        'field_delimiter': json_data_obj['field_delimiter'],
+        'key_delimiter': json_data_obj['key_delimiter'],
+        'destination_file': json_data_obj['destination_file']
     }
     if 'server_source_file' in json_data_obj:
-        diction['map']['server_src'] = json_data_obj['server_source_file']
+        diction['server_src'] = json_data_obj['server_source_file']
     else:
-        diction['map']['source_file'] = json_data_obj['source_file']
+        diction['source_file'] = json_data_obj['source_file']
 
-    return send_request_to_data_nodes(diction)
+    return send_request_to_data_nodes(diction, 'map')
 
 
 def reduce(json_data_obj):
