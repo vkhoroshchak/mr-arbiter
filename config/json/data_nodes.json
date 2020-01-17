@@ -3,7 +3,7 @@
   "data_nodes": [
     {
       "data_node_id": 1,
-      "data_node_address": "127.0.0.1:8014"
+      "data_node_address": "127.0.0.1:5002"
     }
   ]
 }

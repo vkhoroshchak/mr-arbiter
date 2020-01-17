@@ -9,11 +9,9 @@ with open(os.path.join(os.path.dirname(__file__), '..', 'config', 'json', 'data_
 
 
 def make_file(file_name):
-    diction = {'make_file': {
-        'file_name': file_name
-    }}
+    diction = {'file_name': file_name}
 
-    return send_request_to_data_nodes(diction)
+    return send_request_to_data_nodes(diction, 'make_file')
 
 
 def map(json_data_obj):
@@ -53,9 +51,9 @@ def clear_data(context):
     return send_request_to_data_nodes(context)
 
 
-def send_request_to_data_nodes(context):
+def send_request_to_data_nodes(context, command):
     for item in data['data_nodes']:
-        url = 'http://' + item['data_node_address']
-        response = requests.post(url, data=json.dumps(context))
+        url = f'http://{item["data_node_address"]}/command/{command}'
+        response = requests.post(url, json=context)
         response.raise_for_status()
     return response.json()

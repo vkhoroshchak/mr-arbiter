@@ -22,7 +22,7 @@ with open(files_info_path) as file:
 @app.route('/command/make_file', methods=['POST'])
 def make_file():
     file_name = request.json['file_name']
-    # send_requests.make_file(file_name)
+    send_requests.make_file(file_name)
 
     files_info = {
         'files': [
