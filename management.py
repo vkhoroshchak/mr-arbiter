@@ -121,6 +121,12 @@ def reduce():
     return jsonify(success=True)
 
 
+@app.route("/command/clear_data", methods=["POST"])
+def clear_data():
+    send_requests.clear_data(request.json)
+    return jsonify(success=True)
+
+
 @app.route('/command/get_file', methods=['GET'])
 def get_file():
     context = {'data_nodes_ip': []}

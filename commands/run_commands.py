@@ -108,53 +108,7 @@ class Command:
         with open(files_info_path, 'w') as file:
             json.dump(file_info, file, indent=4)
 
-    @staticmethod
-    def hash(content):
-        Command.json_data_obj = content['source_file']
-        SomeClass.list_of_max.append(Command.json_data_obj['list_keys'][0])
-        SomeClass.list_of_min.append(Command.json_data_obj['list_keys'][1])
 
-        SomeClass.counter += 1
-
-        if SomeClass.counter == SomeClass.N:
-            max_hash = max(SomeClass.list_of_max)
-            min_hash = min(SomeClass.list_of_min)
-            step = (max_hash - min_hash) / SomeClass.N
-            context = {
-                'shuffle': {
-                    'nodes_keys': [],
-                    'max_hash': max_hash,
-                    'file_name': Command.json_data_obj['file_name']
-                }
-            }
-            mid_hash = min_hash
-            SomeClass.counter = 0
-            for i in data_nodes_data_json['data_nodes']:
-                SomeClass.counter += 1
-                if SomeClass.counter == SomeClass.N:
-                    end_hash = max_hash
-                else:
-                    end_hash = mid_hash + step
-                context['shuffle']['nodes_keys'].append({
-                    'data_node_ip': i['data_node_address'],
-                    'hash_keys_range': [mid_hash, end_hash]
-                })
-                mid_hash += step
-
-            for i in files_info_file_json['files']:
-                arr = Command.json_data_obj['file_name'].split('.')
-                file_name = arr[0].split('_')[0] + '.' + arr[-1]
-                if file_name == i['file_name'].split(os.sep)[-1]:
-                    print(context['shuffle']['nodes_keys'])
-                    i['key_ranges'] = context['shuffle']['nodes_keys']
-
-            with open(files_info_path, 'w')as file:
-                json.dump(files_info_file_json, file, indent=4)
-
-            for i in data_nodes_data_json['data_nodes']:
-                url = 'http://' + i['data_node_address']
-                response = requests.post(url, data=json.dumps(context))
-            SomeClass.counter = 0
 
     @staticmethod
     def get_file(content):

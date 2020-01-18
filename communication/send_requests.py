@@ -13,9 +13,6 @@ with open(os.path.join(os.path.dirname(__file__), '..', 'config', 'json', 'data_
 with open(config_data_nodes_path) as data_nodes_file:
     data_nodes_data_json = json.load(data_nodes_file)
 
-with open(files_info_path) as files_info_file:
-    files_info_file_json = json.load(files_info_file)
-
 
 class SomeClass:
     N = len(data_nodes_data_json['data_nodes'])
@@ -62,7 +59,19 @@ def reduce(json_data_obj):
 
 
 def clear_data(context):
-    return send_request_to_data_nodes(context)
+    with open(files_info_path) as files_info_file:
+        files_info_file_json = json.load(files_info_file)
+
+    open(files_info_path, 'w').close()
+
+    for item in files_info_file_json['files']:
+        if item['file_name'] == context['folder_name']:
+            files_info_file_json['files'].remove(item)
+
+    with open(files_info_path, 'r+') as file:
+        json.dump(files_info_file_json, file, indent=4)
+
+    return send_request_to_data_nodes(context, 'clear_data')
 
 
 def min_max_hash(context):
@@ -78,6 +87,8 @@ def send_request_to_data_nodes(context, command):
 
 
 def hash(context):
+    with open(files_info_path) as files_info_file:
+        files_info_file_json = json.load(files_info_file)
     print(context)
     SomeClass.list_of_max.append(context['list_keys'][0])
     SomeClass.list_of_min.append(context['list_keys'][1])
