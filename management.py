@@ -1,7 +1,7 @@
 import json
 import os
 from flask import Flask, request, make_response, jsonify
-from commands import run_commands
+# from commands import run_commands
 from communication import send_requests
 
 app = Flask(__name__)
@@ -11,12 +11,6 @@ files_info_path = os.path.join(os.path.dirname(__file__), 'data', 'files_info.js
 
 with open(config_data_nodes_path) as data_nodes_file:
     data_nodes_data_json = json.load(data_nodes_file)
-
-with open(files_info_path) as files_info_file:
-    files_info_file_json = json.load(files_info_file)
-
-with open(files_info_path) as file:
-    file_info = json.loads(file.read())
 
 
 @app.route('/command/make_file', methods=['POST'])
@@ -46,42 +40,53 @@ def make_file():
 def append():
     file_name = request.json['file_name']
     response = {}
+
+    with open(files_info_path) as files_info_file:
+        files_info_file_json = json.load(files_info_file)
+
     for item in files_info_file_json['files']:
         if item['file_name'] == file_name:
-            if not item['file_fragments']:
+
+            if len(item['file_fragments']) == 0:
                 response['data_node_ip'] = f'http://{data_nodes_data_json["data_nodes"][0]["data_node_address"]}'
             else:
-                id = 1
 
-                for key, value in (item['file_fragments'][-1]).items():
-                    id = key
+                last_id = int(list(item['file_fragments'][-1].keys())[-1])
 
                 for i in data_nodes_data_json['data_nodes']:
-                    if i['data_node_id'] == int(id):
-                        prev_ind = data_nodes_data_json['data_nodes'].index(i)
-                        if prev_ind + 1 == len(data_nodes_data_json['data_nodes']):
+                    if i['data_node_id'] == last_id:
+
+                        if last_id == len(data_nodes_data_json['data_nodes']):
+
                             response['data_node_ip'] = \
                                 f'http://{data_nodes_data_json["data_nodes"][0]["data_node_address"]}'
                         else:
                             response['data_node_ip'] = \
-                                f'http://{data_nodes_data_json["data_nodes"][prev_ind + 1]["data_node_address"]}'
+                                f'http://{data_nodes_data_json["data_nodes"][last_id]["data_node_address"]}'
     return jsonify(response)
 
 
 @app.route("/command/refresh_table", methods=["POST"])
 def refresh_table():
+    with open(files_info_path, 'r+') as file:
+        file_info = json.loads(file.read())
+
     for item in file_info['files']:
+        fragments = item['file_fragments']
         if item['file_name'] == request.json['file_name']:
             for i in data_nodes_data_json['data_nodes']:
 
                 if i['data_node_address'] == request.json['ip'].split('//')[-1]:
                     data_node_id = i['data_node_id']
-            item['file_fragments'].append(
-                {
-                    data_node_id: request.json['segment_name']
-                }
-            )
-    with open(files_info_path, 'w') as file:
+
+                    fragments.append(
+                        {
+                            data_node_id: request.json['segment_name']
+                        }
+                    )
+        item['file_fragments'] = fragments
+
+    with open(files_info_path, 'r+') as file:
         json.dump(file_info, file, indent=4)
 
     return jsonify(success=True)
@@ -90,6 +95,24 @@ def refresh_table():
 @app.route("/command/map", methods=["POST"])
 def map():
     return send_requests.map(request.json)
+
+
+@app.route("/command/shuffle", methods=["POST"])
+def shuffle():
+    send_requests.min_max_hash(request.json)
+    return jsonify(success=True)
+
+
+@app.route("/command/min_max_hash", methods=["POST"])
+def min_max_hash():
+    send_requests.min_max_hash(request.json)
+    return jsonify(success=True)
+
+
+@app.route("/command/hash", methods=["POST"])
+def hash():
+    send_requests.hash(request.json)
+    return jsonify(success=True)
 
 
 @app.route("/command/reduce", methods=["POST"])

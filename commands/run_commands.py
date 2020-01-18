@@ -23,11 +23,7 @@ with open(files_info_path) as file:
 # files_info_file = open(os.path.join(os.path.dirname(__file__), 'data', 'files_info.json'))
 # files_info_file_json = json.load(files_info_file)
 
-class SomeClass:
-    N = len(data_nodes_data_json['data_nodes'])
-    counter = 0
-    list_of_min = []
-    list_of_max = []
+
 
 
 class Command:
@@ -114,7 +110,7 @@ class Command:
 
     @staticmethod
     def hash(content):
-        Command.json_data_obj = content['hash']
+        Command.json_data_obj = content['source_file']
         SomeClass.list_of_max.append(Command.json_data_obj['list_keys'][0])
         SomeClass.list_of_min.append(Command.json_data_obj['list_keys'][1])
 
