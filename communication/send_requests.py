@@ -32,7 +32,8 @@ def map(json_data_obj):
         'mapper': json_data_obj['mapper'],
         'field_delimiter': json_data_obj['field_delimiter'],
         'key_delimiter': json_data_obj['key_delimiter'],
-        'destination_file': json_data_obj['destination_file']
+        'destination_file': json_data_obj['destination_file'],
+        'sql_query': json_data_obj['sql_query']
     }
     if 'server_source_file' in json_data_obj:
         diction['server_src'] = json_data_obj['server_source_file']
@@ -46,7 +47,8 @@ def reduce(json_data_obj):
     diction = {
         'reducer': json_data_obj['reducer'],
         'key_delimiter': json_data_obj['key_delimiter'],
-        'destination_file': json_data_obj['destination_file']
+        'destination_file': json_data_obj['destination_file'],
+        'sql_query': json_data_obj['sql_query']
 
     }
     if 'server_source_file' in json_data_obj:
