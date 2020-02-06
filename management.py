@@ -8,6 +8,8 @@ app = Flask(__name__)
 
 config_data_nodes_path = os.path.join(os.path.dirname(__file__), 'config', 'json', 'data_nodes.json')
 files_info_path = os.path.join(os.path.dirname(__file__), 'data', 'files_info.json')
+if not os.path.exists(files_info_path):
+    os.makedirs(os.path.dirname(files_info_path))
 
 with open(config_data_nodes_path) as data_nodes_file:
     data_nodes_data_json = json.load(data_nodes_file)
