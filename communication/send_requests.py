@@ -90,7 +90,6 @@ def send_request_to_data_nodes(context, command):
 def hash(context):
     with open(files_info_path) as files_info_file:
         files_info_file_json = json.load(files_info_file)
-    print(context)
     SomeClass.list_of_max.append(context['list_keys'][0])
     SomeClass.list_of_min.append(context['list_keys'][1])
     SomeClass.counter += 1
@@ -126,7 +125,6 @@ def hash(context):
             arr = context['file_name'].split('.')
             file_name = arr[0].split('_')[0] + '.' + arr[-1]
             if file_name == i['file_name'].split(os.sep)[-1]:
-                print(context['nodes_keys'])
                 i['key_ranges'] = context['nodes_keys']
 
         with open(files_info_path, 'w')as file:
@@ -137,5 +135,4 @@ def hash(context):
             response = requests.post(url, json=context)
         SomeClass.counter = 0
 
-    return response
-
+        return response

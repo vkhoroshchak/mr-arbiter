@@ -1,7 +1,7 @@
 import json
 import os
-from flask import Flask, request, make_response, jsonify
-# from commands import run_commands
+from flask import Flask, request, jsonify
+
 from communication import send_requests
 
 app = Flask(__name__)
@@ -147,4 +147,4 @@ def move_file_to_init_folder():
 
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5001)
+    app.run(host='127.0.0.1', port=5001, debug=True, use_reloader=False)
