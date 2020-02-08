@@ -103,7 +103,8 @@ def hash(context):
         context = {
             'nodes_keys': [],
             'max_hash': max_hash,
-            'file_name': context['file_name']
+            'file_name': context['file_name'],
+            'sql_query': context['sql_query']
         }
 
         mid_hash = min_hash
@@ -137,3 +138,4 @@ def hash(context):
         SomeClass.counter = 0
 
     return response
+

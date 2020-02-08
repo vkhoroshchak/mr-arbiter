@@ -139,5 +139,12 @@ def get_file():
     return jsonify(context)
 
 
+@app.route('/command/move_file_to_init_folder', methods=['POST'])
+def move_file_to_init_folder():
+    send_requests.send_request_to_data_nodes(request.json, 'move_file_to_init_folder')
+
+    return jsonify(success=True)
+
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5001)
