@@ -15,11 +15,10 @@ with open(config_data_nodes_path) as data_nodes_file:
     data_nodes_data_json = json.load(data_nodes_file)
 
 
-@app.route('/command/make_file', methods=['POST'])
-def make_file():
+@app.route('/command/create_config_and_filesystem', methods=['POST'])
+def create_config_and_filesystem():
     file_name = request.json['file_name']
-    send_requests.make_file(file_name)
-
+    send_requests.create_config_and_filesystem(file_name)
     files_info = {
         'files': [
             {
@@ -34,7 +33,6 @@ def make_file():
     }
     with open(files_info_path, 'w+') as file:
         json.dump(files_info, file, indent=4)
-
     return jsonify({'distribution': data_nodes_data_json['distribution']})
 
 

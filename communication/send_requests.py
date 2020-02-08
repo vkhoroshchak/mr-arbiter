@@ -21,10 +21,9 @@ class SomeClass:
     list_of_max = []
 
 
-def make_file(file_name):
+def create_config_and_filesystem(file_name):
     diction = {'file_name': file_name}
-
-    return send_request_to_data_nodes(diction, 'make_file')
+    return send_request_to_data_nodes(diction, 'create_config_and_filesystem')
 
 
 def map(json_data_obj):
@@ -33,7 +32,7 @@ def map(json_data_obj):
         'field_delimiter': json_data_obj['field_delimiter'],
         'key_delimiter': json_data_obj['key_delimiter'],
         'destination_file': json_data_obj['destination_file'],
-        'sql_query': json_data_obj['sql_query']
+        'parsed_select': json_data_obj['parsed_select']
     }
     if 'server_source_file' in json_data_obj:
         diction['server_src'] = json_data_obj['server_source_file']
@@ -48,7 +47,7 @@ def reduce(json_data_obj):
         'reducer': json_data_obj['reducer'],
         'key_delimiter': json_data_obj['key_delimiter'],
         'destination_file': json_data_obj['destination_file'],
-        'sql_query': json_data_obj['sql_query']
+        'parsed_sql': json_data_obj['parsed_sql']
 
     }
     if 'server_source_file' in json_data_obj:
@@ -103,7 +102,7 @@ def hash(context):
             'nodes_keys': [],
             'max_hash': max_hash,
             'file_name': context['file_name'],
-            'sql_query': context['sql_query']
+            'parsed_group_by': context['parsed_group_by']
         }
 
         mid_hash = min_hash
