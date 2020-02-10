@@ -66,6 +66,20 @@ def append():
     return jsonify(response)
 
 
+@app.route("/command/check_if_file_is_on_cluster", methods=["POST"])
+def check_if_file_is_on_cluster():
+    context = {"is_file_on_cluster": False}
+    with open(files_info_path) as file:
+        file_info = json.loads(file.read())
+    for item in file_info["files"]:
+        print("{} - {}".format(item['file_name'], request.json['file_name']))
+        if item['file_name'] == request.json['file_name']:
+            print("TRUETRUETRUE")
+            context['is_file_on_cluster'] = True
+            break
+    return jsonify(context)
+
+
 @app.route("/command/refresh_table", methods=["POST"])
 def refresh_table():
     with open(files_info_path, 'r+') as file:

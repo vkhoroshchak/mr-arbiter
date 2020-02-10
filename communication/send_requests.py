@@ -63,7 +63,8 @@ def clear_data(context):
         files_info_file_json = json.load(files_info_file)
 
     open(files_info_path, 'w').close()
-
+    print("CLEAR DATA ON ARBITER")
+    print(context['folder_name'])
     for item in files_info_file_json['files']:
         if item['file_name'] == context['folder_name']:
             files_info_file_json['files'].remove(item)
