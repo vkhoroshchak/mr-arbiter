@@ -31,7 +31,6 @@ def map(json_data_obj):
         'mapper': json_data_obj['mapper'],
         'field_delimiter': json_data_obj['field_delimiter'],
         'destination_file': json_data_obj['destination_file'],
-        'parsed_select': json_data_obj['parsed_select']
     }
     if 'server_source_file' in json_data_obj:
         diction['server_src'] = json_data_obj['server_source_file']
@@ -45,7 +44,6 @@ def reduce(json_data_obj):
     diction = {
         'reducer': json_data_obj['reducer'],
         'destination_file': json_data_obj['destination_file'],
-        'parsed_sql': json_data_obj['parsed_sql'],
         'field_delimiter': json_data_obj['field_delimiter']
 
     }
@@ -62,8 +60,6 @@ def clear_data(context):
         files_info_file_json = json.load(files_info_file)
 
     open(files_info_path, 'w').close()
-    print("CLEAR DATA ON ARBITER")
-    print(context['folder_name'])
     for item in files_info_file_json['files']:
         if item['file_name'] == context['folder_name']:
             files_info_file_json['files'].remove(item)
@@ -102,8 +98,8 @@ def hash(context):
             'nodes_keys': [],
             'max_hash': max_hash,
             'file_name': context['file_name'],
-            'parsed_group_by': context['parsed_group_by'],
-            'field_delimiter': context['field_delimiter']
+            'field_delimiter': context['field_delimiter'],
+            'key': context['key']
         }
 
         mid_hash = min_hash
