@@ -5,7 +5,6 @@ import os.path
 import requests
 
 config_data_nodes_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'json', 'data_nodes.json')
-files_info_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'files_info.json')
 
 with open(os.path.join(os.path.dirname(__file__), '..', 'config', 'json', 'data_nodes.json')) as json_data:
     data = json.load(json_data)
@@ -55,18 +54,12 @@ def reduce(json_data_obj):
     return send_request_to_data_nodes(diction, 'reduce')
 
 
-def clear_data(context):
-    with open(files_info_path) as files_info_file:
-        files_info_file_json = json.load(files_info_file)
-
-    open(files_info_path, 'w').close()
-    for item in files_info_file_json['files']:
+def clear_data(context, files_info_dict):
+    print(files_info_dict)
+    for item in files_info_dict['files']:
         if item['file_name'] == context['folder_name']:
-            files_info_file_json['files'].remove(item)
-
-    with open(files_info_path, 'r+') as file:
-        json.dump(files_info_file_json, file, indent=4)
-
+            files_info_dict['files'].remove(item)
+    print(files_info_dict)
     return send_request_to_data_nodes(context, 'clear_data')
 
 
@@ -82,9 +75,7 @@ def send_request_to_data_nodes(context, command):
     return response.json()
 
 
-def hash(context):
-    with open(files_info_path) as files_info_file:
-        files_info_file_json = json.load(files_info_file)
+def hash(context, files_info_dict):
     SomeClass.list_of_max.append(context['list_keys'][0])
     SomeClass.list_of_min.append(context['list_keys'][1])
     SomeClass.counter += 1
@@ -117,14 +108,11 @@ def hash(context):
             })
             mid_hash += step
 
-        for i in files_info_file_json['files']:
+        for i in files_info_dict['files']:
             arr = context['file_name'].split('.')
             file_name = arr[0].split('_')[0] + '.' + arr[-1]
             if file_name == i['file_name'].split(os.sep)[-1]:
                 i['key_ranges'] = context['nodes_keys']
-
-        with open(files_info_path, 'w')as file:
-            json.dump(files_info_file_json, file, indent=4)
 
         for i in data_nodes_data_json['data_nodes']:
             url = f'http://{i["data_node_address"]}/command/shuffle'

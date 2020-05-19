@@ -7,9 +7,13 @@ from communication import send_requests
 app = Flask(__name__)
 
 config_data_nodes_path = os.path.join(os.path.dirname(__file__), 'config', 'json', 'data_nodes.json')
-files_info_path = os.path.join(os.path.dirname(__file__), 'data', 'files_info.json')
-if not os.path.exists(files_info_path):
-    os.makedirs(os.path.dirname(files_info_path))
+# #files_info_path = os.path.join(os.path.dirname(__file__), 'data', 'files_info.json')
+# if not os.path.exists(files_info_path):
+#     os.makedirs(os.path.dirname(files_info_path))
+
+files_info_dict = {
+    'files': []
+}
 
 with open(config_data_nodes_path) as data_nodes_file:
     data_nodes_data_json = json.load(data_nodes_file)
@@ -19,20 +23,14 @@ with open(config_data_nodes_path) as data_nodes_file:
 def create_config_and_filesystem():
     file_name = request.json['file_name']
     send_requests.create_config_and_filesystem(file_name)
-    files_info = {
-        'files': [
-            {
-
-                'file_name': file_name,
-                'lock': False,
-                'last_fragment_block_size': 1024,
-                'key_ranges': None,
-                'file_fragments': []
-            }
-        ]
-    }
-    with open(files_info_path, 'w+') as file:
-        json.dump(files_info, file, indent=4)
+    files_info_dict['files'].append(
+        {
+            'file_name': file_name,
+            'lock': False,
+            'last_fragment_block_size': 1024,
+            'key_ranges': None,
+            'file_fragments': []
+        })
     return jsonify({'distribution': data_nodes_data_json['distribution']})
 
 
@@ -41,10 +39,7 @@ def append():
     file_name = request.json['file_name']
     response = {}
 
-    with open(files_info_path) as files_info_file:
-        files_info_file_json = json.load(files_info_file)
-
-    for item in files_info_file_json['files']:
+    for item in files_info_dict['files']:
         if item['file_name'] == file_name:
 
             if len(item['file_fragments']) == 0:
@@ -69,9 +64,7 @@ def append():
 @app.route("/command/check_if_file_is_on_cluster", methods=["POST"])
 def check_if_file_is_on_cluster():
     context = {"is_file_on_cluster": False}
-    with open(files_info_path) as file:
-        file_info = json.loads(file.read())
-    for item in file_info["files"]:
+    for item in files_info_dict["files"]:
         if item['file_name'] == request.json['file_name']:
             context['is_file_on_cluster'] = True
             break
@@ -80,10 +73,8 @@ def check_if_file_is_on_cluster():
 
 @app.route("/command/refresh_table", methods=["POST"])
 def refresh_table():
-    with open(files_info_path, 'r+') as file:
-        file_info = json.loads(file.read())
 
-    for item in file_info['files']:
+    for item in files_info_dict['files']:
         fragments = item['file_fragments']
         if item['file_name'] == request.json['file_name']:
             for i in data_nodes_data_json['data_nodes']:
@@ -97,9 +88,6 @@ def refresh_table():
                         }
                     )
         item['file_fragments'] = fragments
-
-    with open(files_info_path, 'r+') as file:
-        json.dump(file_info, file, indent=4)
 
     return jsonify(success=True)
 
@@ -135,7 +123,7 @@ def reduce():
 
 @app.route("/command/clear_data", methods=["POST"])
 def clear_data():
-    send_requests.clear_data(request.json)
+    send_requests.clear_data(request.json, files_info_dict)
     return jsonify(success=True)
 
 
