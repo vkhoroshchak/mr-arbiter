@@ -13,11 +13,63 @@ with open(config_data_nodes_path) as data_nodes_file:
     data_nodes_data_json = json.load(data_nodes_file)
 
 
-class SomeClass:
+class ShuffleManager:
     N = len(data_nodes_data_json['data_nodes'])
-    counter = 0
-    list_of_min = []
-    list_of_max = []
+
+    def __init__(self):
+        self.counter = 0
+        self.list_of_min = []
+        self.list_of_max = []
+
+    def min_max_hash(self, context):
+        return send_request_to_data_nodes(context, 'min_max_hash')
+
+    def hash(self, context, files_info_dict):
+        response = None
+        self.list_of_max.append(context['list_keys'][0])
+        self.list_of_min.append(context['list_keys'][1])
+        self.counter += 1
+
+        if self.counter == ShuffleManager.N:
+            max_hash = max(self.list_of_max)
+            min_hash = min(self.list_of_min)
+            step = (max_hash - min_hash) / ShuffleManager.N
+
+            context = {
+                'nodes_keys': [],
+                'max_hash': max_hash,
+                'file_name': context['file_name'],
+                'field_delimiter': context['field_delimiter'],
+                'key': context['key']
+            }
+
+            mid_hash = min_hash
+            self.counter = 0
+
+            for i in data_nodes_data_json['data_nodes']:
+                self.counter += 1
+                if self.counter == ShuffleManager.N:
+                    end_hash = max_hash
+                else:
+                    end_hash = mid_hash + step
+                context['nodes_keys'].append({
+                    'data_node_ip': i['data_node_address'],
+                    'hash_keys_range': [mid_hash, end_hash]
+                })
+                mid_hash += step
+
+            for i in files_info_dict['files']:
+                arr = context['file_name'].split('.')
+                file_name = arr[0].split('_')[0] + '.' + arr[-1]
+                if file_name == i['file_name'].split(os.sep)[-1]:
+                    i['key_ranges'] = context['nodes_keys']
+
+            for i in data_nodes_data_json['data_nodes']:
+                url = f'http://{i["data_node_address"]}/command/shuffle'
+                response = requests.post(url, json=context)
+            self.counter = 0
+
+            return response
 
 
 def create_config_and_filesystem(file_name):
@@ -63,8 +115,7 @@ def clear_data(context, files_info_dict):
     return send_request_to_data_nodes(context, 'clear_data')
 
 
-def min_max_hash(context):
-    return send_request_to_data_nodes(context, 'min_max_hash')
+
 
 
 def send_request_to_data_nodes(context, command):
@@ -75,48 +126,3 @@ def send_request_to_data_nodes(context, command):
     return response.json()
 
 
-def hash(context, files_info_dict):
-    SomeClass.list_of_max.append(context['list_keys'][0])
-    SomeClass.list_of_min.append(context['list_keys'][1])
-    SomeClass.counter += 1
-
-    if SomeClass.counter == SomeClass.N:
-        max_hash = max(SomeClass.list_of_max)
-        min_hash = min(SomeClass.list_of_min)
-        step = (max_hash - min_hash) / SomeClass.N
-
-        context = {
-            'nodes_keys': [],
-            'max_hash': max_hash,
-            'file_name': context['file_name'],
-            'field_delimiter': context['field_delimiter'],
-            'key': context['key']
-        }
-
-        mid_hash = min_hash
-        SomeClass.counter = 0
-
-        for i in data_nodes_data_json['data_nodes']:
-            SomeClass.counter += 1
-            if SomeClass.counter == SomeClass.N:
-                end_hash = max_hash
-            else:
-                end_hash = mid_hash + step
-            context['nodes_keys'].append({
-                'data_node_ip': i['data_node_address'],
-                'hash_keys_range': [mid_hash, end_hash]
-            })
-            mid_hash += step
-
-        for i in files_info_dict['files']:
-            arr = context['file_name'].split('.')
-            file_name = arr[0].split('_')[0] + '.' + arr[-1]
-            if file_name == i['file_name'].split(os.sep)[-1]:
-                i['key_ranges'] = context['nodes_keys']
-
-        for i in data_nodes_data_json['data_nodes']:
-            url = f'http://{i["data_node_address"]}/command/shuffle'
-            response = requests.post(url, json=context)
-        SomeClass.counter = 0
-
-        return response
