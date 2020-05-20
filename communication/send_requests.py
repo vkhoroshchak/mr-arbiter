@@ -26,8 +26,8 @@ class ShuffleManager:
 
     def hash(self, context, files_info_dict):
         response = None
-        self.list_of_max.append(context['list_keys'][0])
-        self.list_of_min.append(context['list_keys'][1])
+        self.list_of_min.append(context['list_keys'][0])
+        self.list_of_max.append(context['list_keys'][1])
         self.counter += 1
 
         if self.counter == ShuffleManager.N:
@@ -40,7 +40,7 @@ class ShuffleManager:
                 'max_hash': max_hash,
                 'file_name': context['file_name'],
                 'field_delimiter': context['field_delimiter'],
-                'key': context['key']
+                'key': context['key'],
             }
 
             mid_hash = min_hash
@@ -59,9 +59,12 @@ class ShuffleManager:
                 mid_hash += step
 
             for i in files_info_dict['files']:
-                arr = context['file_name'].split('.')
-                file_name = arr[0].split('_')[0] + '.' + arr[-1]
-                if file_name == i['file_name'].split(os.sep)[-1]:
+                # arr = context['file_name'].split('.')
+                fn, ext = os.path.splitext(context['file_name'])
+                # file_name = arr[0].split('_')[0] + '.' + arr[-1]
+                file_name = fn.split("_")[0] + ext
+                # if file_name == i['file_name'].split(os.sep)[-1]:
+                if file_name == os.path.basename(i["file_name"]):
                     i['key_ranges'] = context['nodes_keys']
 
             for i in data_nodes_data_json['data_nodes']:
@@ -113,9 +116,6 @@ def clear_data(context, files_info_dict):
             files_info_dict['files'].remove(item)
     print(files_info_dict)
     return send_request_to_data_nodes(context, 'clear_data')
-
-
-
 
 
 def send_request_to_data_nodes(context, command):

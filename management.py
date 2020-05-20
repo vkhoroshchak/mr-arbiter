@@ -14,7 +14,7 @@ config_data_nodes_path = os.path.join(os.path.dirname(__file__), 'config', 'json
 files_info_dict = {
     'files': []
 }
-
+shuffle_manager = send_requests.ShuffleManager()
 with open(config_data_nodes_path) as data_nodes_file:
     data_nodes_data_json = json.load(data_nodes_file)
 
@@ -31,6 +31,8 @@ def create_config_and_filesystem():
             'key_ranges': None,
             'file_fragments': []
         })
+    global shuffle_manager
+    shuffle_manager = send_requests.ShuffleManager()
     return jsonify({'distribution': data_nodes_data_json['distribution']})
 
 
@@ -99,19 +101,19 @@ def map():
 
 @app.route("/command/shuffle", methods=["POST"])
 def shuffle():
-    send_requests.min_max_hash(request.json)
+    shuffle_manager.min_max_hash(request.json)
     return jsonify(success=True)
 
 
 @app.route("/command/min_max_hash", methods=["POST"])
 def min_max_hash():
-    send_requests.min_max_hash(request.json)
+    shuffle_manager.min_max_hash(request.json)
     return jsonify(success=True)
 
 
 @app.route("/command/hash", methods=["POST"])
 def hash():
-    send_requests.hash(request.json)
+    shuffle_manager.hash(request.json, files_info_dict)
     return jsonify(success=True)
 
 
@@ -146,3 +148,4 @@ def move_file_to_init_folder():
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5001, debug=True, use_reloader=False)
+
