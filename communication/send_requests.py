@@ -110,11 +110,10 @@ def reduce(json_data_obj):
 
 
 def clear_data(context, files_info_dict):
-    print(files_info_dict)
     for item in files_info_dict['files']:
         if item['file_name'] == context['folder_name']:
             files_info_dict['files'].remove(item)
-    print(files_info_dict)
+            break
     return send_request_to_data_nodes(context, 'clear_data')
 
 

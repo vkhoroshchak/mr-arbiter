@@ -7,9 +7,6 @@ from communication import send_requests
 app = Flask(__name__)
 
 config_data_nodes_path = os.path.join(os.path.dirname(__file__), 'config', 'json', 'data_nodes.json')
-# #files_info_path = os.path.join(os.path.dirname(__file__), 'data', 'files_info.json')
-# if not os.path.exists(files_info_path):
-#     os.makedirs(os.path.dirname(files_info_path))
 
 files_info_dict = {
     'files': []
@@ -77,20 +74,17 @@ def check_if_file_is_on_cluster():
 def refresh_table():
 
     for item in files_info_dict['files']:
-        fragments = item['file_fragments']
         if item['file_name'] == request.json['file_name']:
             for i in data_nodes_data_json['data_nodes']:
 
                 if i['data_node_address'] == request.json['ip'].split('//')[-1]:
                     data_node_id = i['data_node_id']
 
-                    fragments.append(
+                    item['file_fragments'].append(
                         {
                             data_node_id: request.json['segment_name']
                         }
                     )
-        item['file_fragments'] = fragments
-
     return jsonify(success=True)
 
 
