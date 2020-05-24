@@ -40,7 +40,6 @@ class ShuffleManager:
                 'max_hash': max_hash,
                 'file_name': context['file_name'],
                 'field_delimiter': context['field_delimiter'],
-                'key': context['key'],
             }
 
             mid_hash = min_hash
