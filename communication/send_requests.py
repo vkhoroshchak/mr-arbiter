@@ -111,8 +111,19 @@ def reduce(json_data_obj):
 def clear_data(context, files_info_dict):
     for item in files_info_dict['files']:
         if item['file_name'] == context['folder_name']:
-            files_info_dict['files'].remove(item)
-            break
+            if context["remove_all_data"]:
+                # upd_item = item["file_name"]
+                files_info_dict['files'].remove(item)
+                # files_info_dict
+                break
+            else:
+                item = {
+                    'file_name': context["folder_name"],
+                    'lock': False,
+                    'last_fragment_block_size': 1024,
+                    'key_ranges': None,
+                    'file_fragments': []
+                }
     return send_request_to_data_nodes(context, 'clear_data')
 
 
@@ -122,5 +133,3 @@ def send_request_to_data_nodes(context, command):
         response = requests.post(url, json=context)
         response.raise_for_status()
     return response.json()
-
-

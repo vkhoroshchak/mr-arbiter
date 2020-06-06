@@ -63,6 +63,8 @@ def append():
 @app.route("/command/check_if_file_is_on_cluster", methods=["POST"])
 def check_if_file_is_on_cluster():
     context = {"is_file_on_cluster": False}
+    print("FILES INFO DICT:")
+    print(files_info_dict)
     for item in files_info_dict["files"]:
         if item['file_name'] == request.json['file_name']:
             context['is_file_on_cluster'] = True
