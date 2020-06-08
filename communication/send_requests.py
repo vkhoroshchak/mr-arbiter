@@ -1,5 +1,3 @@
-# Send tasks to datanodes like Map(), Shuffle(), Reduce() etc.
-# Send request to mkfile to datanodes
 import json
 import os.path
 import requests
@@ -58,11 +56,8 @@ class ShuffleManager:
                 mid_hash += step
 
             for i in files_info_dict['files']:
-                # arr = context['file_name'].split('.')
                 fn, ext = os.path.splitext(context['file_name'])
-                # file_name = arr[0].split('_')[0] + '.' + arr[-1]
                 file_name = fn.split("_")[0] + ext
-                # if file_name == i['file_name'].split(os.sep)[-1]:
                 if file_name == os.path.basename(i["file_name"]):
                     i['key_ranges'] = context['nodes_keys']
 
@@ -112,9 +107,7 @@ def clear_data(context, files_info_dict):
     for item in files_info_dict['files']:
         if item['file_name'] == context['folder_name']:
             if context["remove_all_data"]:
-                # upd_item = item["file_name"]
                 files_info_dict['files'].remove(item)
-                # files_info_dict
                 break
             else:
                 item = {
