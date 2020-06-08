@@ -74,7 +74,6 @@ def check_if_file_is_on_cluster():
 
 @app.route("/command/refresh_table", methods=["POST"])
 def refresh_table():
-
     for item in files_info_dict['files']:
         if item['file_name'] == request.json['file_name']:
             for i in data_nodes_data_json['data_nodes']:
@@ -142,6 +141,41 @@ def move_file_to_init_folder():
     return jsonify(success=True)
 
 
+import pandas as pd
+
+
+@app.route('/command/get_file_from_cluster', methods=['POST'])
+def get_file_from_cluster():
+    # file_name = request.json['file_name']
+    # dest_file_name = request.json['dest_file_name']
+    # response = {}
+    # response['result_file_name'] = dest_file_name
+    # response['result_file_content'] = pd.DataFrame()
+    # response['result_file_content'] = response['result_file_content'].append(send_requests.send_request_to_data_nodes(
+    #     {'file_name': file_name, 'content': response['result_file_content'].to_json()}, 'get_file_from_cluster'))
+    send_requests.send_request_to_data_nodes(request.json, 'get_file_from_cluster')
+    return jsonify(success=True)
+    # return jsonify(response)
+
+
+@app.route('/command/finish_get_file_from_cluster', methods=['POST'])
+def finish_get_file_from_cluster():
+    content = request.json['content']
+    file_name = request.json['dest_file_name']
+    default_file_name_path = '/home/mranch/workspace/Diploma/SQL-manager/'
+    result_file_name_path = os.path.join(default_file_name_path, file_name)
+    df = pd.read_json(content)
+    cols = list(df.columns)
+    field_delimiter = ','
+
+    data_frame = df
+    if not os.path.isfile(result_file_name_path):
+        data_frame.to_csv(result_file_name_path, header=cols, encoding='utf-8', index=False, sep=field_delimiter)
+    else:
+        data_frame.to_csv(result_file_name_path, mode='a', header=False, index=False, encoding='utf-8',
+                          sep=field_delimiter)
+    return jsonify(success=True)
+
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5001, debug=True, use_reloader=False)
-
