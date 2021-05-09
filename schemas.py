@@ -15,23 +15,21 @@ class RefreshTableRequest(BaseModel):
     segment_name: str
 
 
-class StartMapPhaseRequest(BaseModel):
+class PhaseRequest(BaseModel):
     field_delimiter: str
+    file_id: str
+
+
+class StartMapPhaseRequest(PhaseRequest):
     mapper: str
-    server_source_file: Optional[str]
-    source_file: Optional[str]
 
 
-class StartShufflePhaseRequest(BaseModel):
-    field_delimiter: str
-    source_file: str
+class StartShufflePhaseRequest(PhaseRequest):
+    pass
 
 
-class StartReducePhaseRequest(BaseModel):
-    field_delimiter: str
+class StartReducePhaseRequest(PhaseRequest):
     reducer: str
-    server_source_file: Optional[str]
-    source_file: Optional[str]
 
 
 class FileDBInfo(BaseModel):
