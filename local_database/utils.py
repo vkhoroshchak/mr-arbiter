@@ -25,8 +25,8 @@ class FileDBManager:
         try:
             file_obj: FileDB = (
                 self.session.query(FileDB)
-                    .filter(FileDB.id == file_id)
-                    .first()
+                            .filter(FileDB.id == file_id)
+                            .first()
             )
         except StatementError:
             raise HTTPException(
