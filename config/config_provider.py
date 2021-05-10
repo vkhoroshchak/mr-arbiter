@@ -4,14 +4,8 @@ from pathlib import Path
 
 class ConfigProvider:
     def __init__(self):
-        with open(Path('config', 'config.json')) as f:
-            self.config_json: dict = json.load(f)
         with open(Path('config', 'data_nodes.json')) as f:
             self.data_nodes_info: dict = json.load(f)
-
-    @property
-    def local_db_connection(self):
-        return self.config_json.get('local_db_connection')
 
     @property
     def distribution(self):

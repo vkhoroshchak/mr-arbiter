@@ -1,4 +1,5 @@
 import datetime
+import os
 import uuid
 
 from sqlalchemy import PickleType
@@ -9,16 +10,15 @@ from sqlalchemy import (
     String,
     Boolean,
     TIMESTAMP,
+    ForeignKey,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.types import TypeDecorator, CHAR
 
-from config.config_provider import config
-
-engine = create_engine(config.local_db_connection, encoding='utf8')
+engine = create_engine(os.environ.get("DATABASE_URI"), encoding='utf8')
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
 
@@ -61,7 +61,7 @@ class FileDB(Base):
     __tablename__ = 'files'
     id = Column(GUID(), primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     file_name = Column(String, nullable=False)
-
+    field_delimiter = Column(String, nullable=False, server_default=",")
     lock = Column(Boolean, default=False)
     last_fragment_block_size = Column(Integer, default=1024)
 
@@ -72,4 +72,21 @@ class FileDB(Base):
     updated_at = Column(TIMESTAMP, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
 
-Base.metadata.create_all(engine)
+class Shuffle(Base):
+    __tablename__ = 'shuffle'
+    id = Column(Integer, primary_key=True, index=True)
+    file_id = Column(GUID(), ForeignKey("files.id"), nullable=False)
+    file = relationship(
+        FileDB,
+        foreign_keys=file_id,
+        primaryjoin=file_id == FileDB.id,
+        lazy="joined",
+    )
+    list_of_min_hashes = Column(MutableList.as_mutable(PickleType), default=[])
+    list_of_max_hashes = Column(MutableList.as_mutable(PickleType), default=[])
+    data_nodes_processed = Column(Integer, default=0)
+
+    created_at = Column(TIMESTAMP, default=datetime.datetime.now)
+    updated_at = Column(TIMESTAMP, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+
+# Base.metadata.create_all(engine)

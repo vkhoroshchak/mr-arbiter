@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 
 class FileSchema(BaseModel):
+    field_delimiter: Optional[str]
     file_name: Optional[str]
     file_id: Optional[str]
 
@@ -16,7 +17,6 @@ class RefreshTableRequest(BaseModel):
 
 
 class PhaseRequest(BaseModel):
-    field_delimiter: str
     file_id: str
 
 
@@ -33,6 +33,12 @@ class StartReducePhaseRequest(PhaseRequest):
     source_file: Any
 
 
+class HashRequest(BaseModel):
+    file_id: str
+    max_hash_value: int
+    min_hash_value: int
+
+
 class FileDBInfo(BaseModel):
     id: Any
     file_name: str
@@ -43,3 +49,9 @@ class FileDBInfo(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ClearDataRequest(BaseModel):
+    file_id: str
+    remove_all_data: bool
+    folder_name: Optional[str]
