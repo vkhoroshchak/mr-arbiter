@@ -30,6 +30,7 @@ class StartShufflePhaseRequest(PhaseRequest):
 
 class StartReducePhaseRequest(PhaseRequest):
     reducer: str
+    source_file: Any
 
 
 class FileDBInfo(BaseModel):

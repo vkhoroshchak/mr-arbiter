@@ -14,8 +14,8 @@ def send_request_to_data_nodes(context, command):
 
 
 def start_map_phase(map_request):
-    return send_request_to_data_nodes(map_request, 'map')
+    return send_request_to_data_nodes(map_request.__dict__, 'map')
 
 
 def start_reduce_phase(reduce_request):
-    return send_request_to_data_nodes(reduce_request, 'reduce')
+    return send_request_to_data_nodes(reduce_request.__dict__, 'reduce')

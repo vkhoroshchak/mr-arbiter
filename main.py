@@ -85,6 +85,7 @@ async def get_file_info(file_id: str):
 
 @app.post("/command/map")
 async def start_map_phase(map_request: schemas.StartMapPhaseRequest):
+    print(88)
     logger.info(jsonable_encoder(map_request))
     send_requests.start_map_phase(map_request)
 
