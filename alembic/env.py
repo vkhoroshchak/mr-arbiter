@@ -1,9 +1,15 @@
 import os
+import sys
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+
+sys.path = ['.', '..'] + sys.path[1:]
+from dotenv import load_dotenv
+
+load_dotenv()
 from local_database.models import Base
 
 # this is the Alembic Config object, which provides
@@ -20,6 +26,7 @@ fileConfig(config.config_file_name)
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
+
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

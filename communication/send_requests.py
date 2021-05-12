@@ -28,7 +28,7 @@ def start_reduce_phase(reduce_request):
 
 
 def min_max_hash(shuffle_request: schemas.StartShufflePhaseRequest):
-    return send_request_to_data_nodes(shuffle_request, 'min_max_hash')
+    return send_request_to_data_nodes(shuffle_request.__dict__, 'min_max_hash')
 
 
 def generate_hash_ranges(hash_request: schemas.HashRequest):
