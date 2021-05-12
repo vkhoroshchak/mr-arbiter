@@ -6,6 +6,9 @@ from communication import send_requests
 from config.config_provider import config
 from config.logger import arbiter_logger
 from local_database.utils import session_scope, FileDBManager, ShuffleDBManager
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = arbiter_logger.get_logger(__name__)
 
