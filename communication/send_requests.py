@@ -8,15 +8,18 @@ from local_database.utils import FileDBManager, ShuffleDBManager, session_scope
 logger = arbiter_logger.get_logger(__name__)
 
 
-def create_config_and_filesystem(file_name):
-    return send_request_to_data_nodes({'file_name': file_name}, 'create_config_and_filesystem')
+def create_config_and_filesystem(file_name, file_id):
+    return send_request_to_data_nodes({'file_name': file_name, 'file_id': file_id}, 'create_config_and_filesystem')
 
 
 def send_request_to_data_nodes(data_to_data_node, command):
     logger.info(f"Send request to data nodes: {data_to_data_node}")
     for item in config.data_nodes:
-        url = f'http://{item["data_node_address"]}/command/{command}'
-        requests.post(url, json=data_to_data_node)
+        try:
+            url = f'http://{item["data_node_address"]}/command/{command}'
+            requests.post(url, json=data_to_data_node, timeout=0.1)
+        except requests.exceptions.ReadTimeout:
+            pass
 
 
 def start_map_phase(map_request):
@@ -53,14 +56,14 @@ def generate_hash_ranges(hash_request: schemas.HashRequest):
         # If we get key hash ranges from all data nodes - start shuffle phase
         if shuffle_db_obj.data_nodes_processed == len(data_nodes_ip_addresses):
             logger.info("Received hash key ranges from all data nodes")
-            max_hash = max(shuffle_db_obj.list_of_max)
-            min_hash = min(shuffle_db_obj.list_of_min)
+            max_hash = max(shuffle_db_obj.list_of_max_hashes)
+            min_hash = min(shuffle_db_obj.list_of_min_hashes)
             step = (max_hash - min_hash) / len(data_nodes_ip_addresses)
 
             data_to_data_node = {
                 'nodes_keys': [],
                 'max_hash': max_hash,
-                'file_name': file_db_obj.file_name,
+                'file_id': hash_request.file_id,
                 'field_delimiter': file_db_obj.field_delimiter,
             }
             mid_hash = min_hash

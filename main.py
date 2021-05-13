@@ -21,10 +21,12 @@ async def create_config_and_filesystem(file: schemas.FileSchema):
         file_db_manager = FileDBManager(session)
         file_in_db = file_db_manager.add_new_record(file_name=file.file_name, field_delimiter=file.field_delimiter)
 
-        logger.info(f"Created file in DB with id {file_in_db.id}")
-        send_requests.create_config_and_filesystem(file.file_name)
+        file_id = str(file_in_db.id)
 
-        return {'distribution': config.distribution, 'file_id': file_in_db.id}
+        logger.info(f"Created file in DB with id {file_id}")
+        send_requests.create_config_and_filesystem(file.file_name, file_id)
+
+        return {'distribution': config.distribution, 'file_id': file_id}
 
 
 @app.get("/command/check_if_file_is_on_cluster")

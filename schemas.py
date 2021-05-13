@@ -19,7 +19,6 @@ class RefreshTableRequest(BaseModel):
 class PhaseRequest(BaseModel):
     file_id: str
     field_delimiter: str
-    source_file: Any
 
 
 class StartMapPhaseRequest(PhaseRequest):
@@ -32,12 +31,15 @@ class StartShufflePhaseRequest(PhaseRequest):
 
 class StartReducePhaseRequest(PhaseRequest):
     reducer: str
+    source_file: Any
 
 
 class HashRequest(BaseModel):
     file_id: str
-    max_hash_value: int
     min_hash_value: int
+    max_hash_value: int
+    # list_keys: list
+    # field_delimiter: str
 
 
 class FileDBInfo(BaseModel):
