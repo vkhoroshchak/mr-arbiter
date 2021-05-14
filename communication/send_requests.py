@@ -17,7 +17,7 @@ def send_request_to_data_nodes(data_to_data_node, command):
     for item in config.data_nodes:
         try:
             url = f'http://{item["data_node_address"]}/command/{command}'
-            requests.post(url, json=data_to_data_node, timeout=0.1)
+            requests.post(url, json=data_to_data_node, timeout=1)
         except requests.exceptions.ReadTimeout:
             pass
 
