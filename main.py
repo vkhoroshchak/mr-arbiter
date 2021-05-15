@@ -20,7 +20,7 @@ async def create_config_and_filesystem(file: schemas.FileSchema):
     file_id = file_db_manager.add_new_record(file_name=file.file_name, field_delimiter=file.field_delimiter)
 
     logger.info(f"Created file in DB with id {file_id}")
-    send_requests.create_config_and_filesystem(file.file_name, file_id)
+    await send_requests.create_config_and_filesystem(file.file_name, file_id)
 
     return {'distribution': config.distribution, 'file_id': file_id}
 
@@ -38,7 +38,7 @@ async def check_if_file_is_on_cluster(file_id: str):
 
 @app.post('/command/move_file_to_init_folder')
 async def move_file_to_init_folder(file_id: str):
-    send_requests.send_request_to_data_nodes({"file_id": file_id}, 'move_file_to_init_folder')
+    await send_requests.send_request_to_data_nodes({"file_id": file_id}, 'move_file_to_init_folder')
 
 
 @app.get('/command/get-data-nodes-list')
@@ -80,7 +80,7 @@ async def get_file_info(file_id: str):
 @app.post("/command/map")
 async def start_map_phase(map_request: schemas.StartMapPhaseRequest):
     logger.info(jsonable_encoder(map_request))
-    send_requests.start_map_phase(map_request)
+    await send_requests.start_map_phase(map_request)
 
 
 @app.post("/command/shuffle")
@@ -88,20 +88,20 @@ async def start_shuffle_phase(shuffle_request: schemas.StartShufflePhaseRequest)
     logger.info(jsonable_encoder(shuffle_request))
     shuffle_db_manager = ShuffleDBManager()
     shuffle_db_manager.add_new_record(shuffle_request.file_id)
-    send_requests.min_max_hash(shuffle_request)
+    await send_requests.min_max_hash(shuffle_request)
 
 
 @app.post("/command/hash")
 async def generate_hash_ranges(hash_request: schemas.HashRequest):
-    send_requests.generate_hash_ranges(hash_request)
+    await send_requests.generate_hash_ranges(hash_request)
 
 
 @app.post("/command/reduce")
 async def start_reduce_phase(reduce_request: schemas.StartReducePhaseRequest):
     logger.info(jsonable_encoder(reduce_request))
-    send_requests.start_reduce_phase(reduce_request)
+    await send_requests.start_reduce_phase(reduce_request)
 
 
 @app.post("/command/clear_data")
-def clear_data(clear_data_request: schemas.ClearDataRequest):
-    send_requests.clear_data(clear_data_request)
+async def clear_data(clear_data_request: schemas.ClearDataRequest):
+    await send_requests.clear_data(clear_data_request)

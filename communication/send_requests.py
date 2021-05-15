@@ -1,6 +1,7 @@
+import asyncio
 import datetime
 
-import requests
+from aiohttp import ClientSession
 
 import schemas
 from config.config_provider import config
@@ -10,33 +11,41 @@ from local_database.utils import FileDBManager, ShuffleDBManager
 logger = arbiter_logger.get_logger(__name__)
 
 
-def create_config_and_filesystem(file_name, file_id):
-    return send_request_to_data_nodes({'file_name': file_name, 'file_id': file_id}, 'create_config_and_filesystem')
+async def create_config_and_filesystem(file_name, file_id):
+    return await send_request_to_data_nodes({'file_name': file_name, 'file_id': file_id},
+                                            'create_config_and_filesystem')
 
 
-def send_request_to_data_nodes(data_to_data_node, command):
+async def send_request_to_data_nodes(data_to_data_node, command):
     logger.info(f"Send request to data nodes: {data_to_data_node}")
-    for item in config.data_nodes:
-        try:
-            url = f'http://{item["data_node_address"]}/command/{command}'
-            requests.post(url, json=data_to_data_node, timeout=1)
-        except requests.exceptions.ReadTimeout:
-            pass
+    async with ClientSession() as session:
+        async def send_request(ip_address):
+            headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+            async with session.request(url=f'http://{ip_address}/command/{command}',  # noqa
+                                       headers=headers,
+                                       json=data_to_data_node,
+                                       method="POST") as resp:
+                return await resp.json()
+    tasks = []
+    for data_node in config.data_nodes:
+        tasks.append(asyncio.ensure_future(send_request(data_node["data_node_address"])))
+
+    await asyncio.gather(*tasks)
 
 
-def start_map_phase(map_request):
-    return send_request_to_data_nodes(map_request.__dict__, 'map')
+async def start_map_phase(map_request):
+    return await send_request_to_data_nodes(map_request.__dict__, 'map')
 
 
-def start_reduce_phase(reduce_request):
-    return send_request_to_data_nodes(reduce_request.__dict__, 'reduce')
+async def start_reduce_phase(reduce_request):
+    return await send_request_to_data_nodes(reduce_request.__dict__, 'reduce')
 
 
-def min_max_hash(shuffle_request: schemas.StartShufflePhaseRequest):
-    return send_request_to_data_nodes(shuffle_request.__dict__, 'min_max_hash')
+async def min_max_hash(shuffle_request: schemas.StartShufflePhaseRequest):
+    return await send_request_to_data_nodes(shuffle_request.__dict__, 'min_max_hash')
 
 
-def generate_hash_ranges(hash_request: schemas.HashRequest):
+async def generate_hash_ranges(hash_request: schemas.HashRequest):
     logger.info("Received hash key ranges")
     logger.info(f"Min hash value: {hash_request.min_hash_value}")
     logger.info(f"Max hash value: {hash_request.max_hash_value}")
@@ -87,12 +96,10 @@ def generate_hash_ranges(hash_request: schemas.HashRequest):
 
         logger.info(f"Data to data nodes: {data_to_data_node}")
         logger.info("Sending data to data nodes")
-        for data_node in config.data_nodes:
-            url = f'http://{data_node["data_node_address"]}/command/shuffle'
-            requests.post(url, json=data_to_data_node)
+        await send_request_to_data_nodes(data_to_data_node, 'shuffle')
 
 
-def clear_data(clear_data_request: schemas.ClearDataRequest):
+async def clear_data(clear_data_request: schemas.ClearDataRequest):
     shuffle_db_manager = ShuffleDBManager()
     file_db_obj = FileDBManager().get(clear_data_request.file_id)
 
@@ -103,4 +110,4 @@ def clear_data(clear_data_request: schemas.ClearDataRequest):
     else:
         shuffle_db_manager.reset_obj(clear_data_request.file_id)
 
-    return send_request_to_data_nodes(clear_data_request, 'clear_data')
+    return await send_request_to_data_nodes(clear_data_request, 'clear_data')
