@@ -1,115 +1,91 @@
-from contextlib import contextmanager
+import datetime
+import json
+import uuid
 
-from fastapi import status, HTTPException
-from sqlalchemy.exc import StatementError
+import redis
 
 from config.config_provider import config
-from local_database.models import Session, FileDB, Shuffle
-
-
-@contextmanager
-def session_scope():
-    """Provide a transactional scope around a series of operations."""
-    session = Session()
-    try:
-        yield session
-        session.commit()
-    except:  # noqa: E722
-        session.rollback()
-        raise
-    finally:
-        session.close()
 
 
 class BaseDB:
-    def __init__(self, session=None):
-        self.session = session
+    def __init__(self):
+        self.r = redis.StrictRedis(charset="utf-8",
+                                   decode_responses=True)
 
-    def save(self, obj):
-        self.session.add(obj)
-        self.session.commit()
-        self.session.refresh(obj)
-        return obj
+    def save(self, file_id: str, obj):
+        return self.r.set(file_id, json.dumps(obj))
+
+    def get(self, file_id: str):
+        return json.loads(self.r.get(file_id))
+
+    def delete(self, file_id: str):
+        return self.r.delete(file_id)
 
 
 class FileDBManager(BaseDB):
 
     def add_new_record(self, file_name, field_delimiter):
-        file_in_db = FileDB(file_name=file_name, field_delimiter=field_delimiter)
-        self.save(file_in_db)
+        file_id = str(uuid.uuid4())
+        file = {
+            "file_name": file_name,
+            "field_delimiter": field_delimiter,
+            "lock": False,
+            "last_fragment_block_size": 1024,
+            "key_ranges": [],
+            "file_fragments": [],
+            "created_at": datetime.datetime.now().isoformat(),
+            "updated_at": datetime.datetime.now().isoformat(),
+        }
+        self.save(file_id, file)
 
-        return file_in_db
-
-    def get_file_by_id(self, file_id):
-        try:
-            file_obj: FileDB = (
-                self.session.query(FileDB)
-                            .filter(FileDB.id == file_id)
-                            .first()
-            )
-        except StatementError:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Invalid file id"
-            )
-        else:
-            return file_obj
+        return file_id
 
     def update(self, file_id, attrs):
-        file_in_db = self.get_file_by_id(file_id)
+        file_in_db = self.get(file_id)
 
         for key, value in attrs.items():
             if hasattr(file_in_db, key):
                 setattr(file_in_db, key, value)
 
-        self.save(file_in_db)
+        self.save(file_id, file_in_db)
         return file_in_db
 
     def get_list_of_data_nodes_ip_addresses(self, file_id: str):
-        file_in_db = self.get_file_by_id(file_id)
-        data_nodes_ids = {list(data_node_id.keys())[0] for data_node_id in file_in_db.file_fragments}
+        file_in_db = self.get(file_id)
+        data_nodes_ids = {list(data_node_id.keys())[0] for data_node_id in file_in_db["file_fragments"]}
         data_nodes_ip_addresses = [config.get_data_node_ip(data_node_id) for data_node_id in data_nodes_ids]
 
         return data_nodes_ip_addresses
 
 
 class ShuffleDBManager(BaseDB):
+    def __init__(self):
+        super().__init__()
+        self.r = redis.StrictRedis(db=1,
+                                   charset="utf-8",
+                                   decode_responses=True)
 
     def add_new_record(self, file_id: str):
-        file_in_db = Shuffle(file_id=file_id)
-        self.save(file_in_db)
+        file = {
+            "list_of_min_hashes": [],
+            "list_of_max_hashes": [],
+            "data_nodes_processed": 0,
+            "created_at": datetime.datetime.now().isoformat(),
+            "updated_at": datetime.datetime.now().isoformat(),
+        }
+        self.save(file_id, file)
 
-        return file_in_db
-
-    def get_shuffle_obj_by(self, file_id: str):
-        try:
-            shuffle_obj: Shuffle = (
-                self.session.query(Shuffle)
-                    .filter(Shuffle.file_id == file_id)
-                    .first()
-            )
-        except StatementError:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Invalid file id"
-            )
-        else:
-            return shuffle_obj
-
-    def delete(self, file_id: str):
-        file_db_obj = self.get_shuffle_obj_by(file_id)
-        if file_db_obj:
-            self.session.delete(file_db_obj)
-            self.session.commit()
-
-            return True
-        else:
-            return False
+        return file_id
 
     def reset_obj(self, file_id: str):
-        file_db_obj = self.get_shuffle_obj_by(file_id)
+        file_db_obj = self.get(file_id)
         if file_db_obj:
-            file_db_obj.data_nodes_processed = 0
-            file_db_obj.list_of_max_hashes = []
-            file_db_obj.list_of_min_hashes = []
-            self.save(file_db_obj)
+            file_db_obj.update(
+                {
+                    "list_of_min_hashes": [],
+                    "list_of_max_hashes": [],
+                    "data_nodes_processed": 0,
+                }
+            )
+
+            self.save(file_id, file_db_obj)

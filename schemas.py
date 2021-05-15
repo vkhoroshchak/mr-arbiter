@@ -43,12 +43,11 @@ class HashRequest(BaseModel):
 
 
 class FileDBInfo(BaseModel):
-    id: Any
     file_name: str
     key_ranges: list
     file_fragments: list
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: str
+    updated_at: str
 
     class Config:
         orm_mode = True
