@@ -26,11 +26,12 @@ async def send_request_to_data_nodes(data_to_data_node, command):
                                        json=data_to_data_node,
                                        method="POST") as resp:
                 return await resp.json()
-    tasks = []
-    for data_node in config.data_nodes:
-        tasks.append(asyncio.ensure_future(send_request(data_node["data_node_address"])))
 
-    await asyncio.gather(*tasks)
+        tasks = []
+        for data_node in config.data_nodes:
+            tasks.append(asyncio.ensure_future(send_request(data_node["data_node_address"])))
+
+        await asyncio.gather(*tasks)
 
 
 async def start_map_phase(map_request):
