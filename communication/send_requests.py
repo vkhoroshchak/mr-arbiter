@@ -25,7 +25,7 @@ async def send_request_to_data_nodes(data_to_data_node, command):
                                        headers=headers,
                                        json=data_to_data_node,
                                        method="POST") as resp:
-                return await resp.json()
+                return await resp.json(content_type=None)
 
         tasks = []
         for data_node in config.data_nodes:
