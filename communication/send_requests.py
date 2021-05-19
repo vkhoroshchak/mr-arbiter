@@ -21,11 +21,16 @@ async def send_request_to_data_nodes(data_to_data_node, command):
     async with ClientSession() as session:
         async def send_request(ip_address):
             headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-            async with session.request(url=f'http://{ip_address}/command/{command}',  # noqa
-                                       headers=headers,
-                                       json=data_to_data_node,
-                                       method="POST") as resp:
-                return await resp.json(content_type=None)
+            url = f'http://{ip_address}/command/{command}'  # noqa
+            try:
+                async with session.request(url=url,
+                                           headers=headers,
+                                           json=data_to_data_node,
+                                           timeout=10,
+                                           method="POST") as resp:
+                    return await resp.json(content_type=None)
+            except asyncio.exceptions.TimeoutError:
+                pass
 
         tasks = []
         for data_node in config.data_nodes:
