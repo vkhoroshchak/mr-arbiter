@@ -116,4 +116,36 @@ async def clear_data(clear_data_request: schemas.ClearDataRequest):
     else:
         shuffle_db_manager.reset_obj(clear_data_request.file_id)
 
-    return await send_request_to_data_nodes(clear_data_request, 'clear_data')
+    return await send_request_to_data_nodes(clear_data_request.__dict__, 'clear_data')
+
+
+# async def get_file(content: dict):
+    # return await send_request_to_data_nodes(content, 'get_file')
+    # return FileDBManager().get(content['file_id'])['file_name']
+    # logger.info(f"Send request to data nodes: {data_to_data_node}")
+    # async with ClientSession() as session:
+    #     async def send_request(ip_address):
+    #         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+    #         url = f'http://{ip_address}/command/get_file'  # noqa
+    #         try:
+    #             file_parts.append(await session.request(url=url,
+    #                                                     headers=headers,
+    #                                                     json=content,
+    #                                                     timeout=10,
+    #                                                     method="GET"))
+    #             # res = resp.
+    #             # file_parts.append(resp)
+    #             # print(136, resp)
+    #             # return resp
+    #         except asyncio.exceptions.TimeoutError:
+    #             pass
+    #
+    #     tasks = []
+    #     file_parts = []
+    #     for data_node in config.data_nodes:
+    #         await send_request(data_node["data_node_address"])
+    #         # tasks.append(asyncio.ensure_future(send_request(data_node["data_node_address"])))
+    #
+    #     await asyncio.gather(*tasks)
+    #     print(148, file_parts)
+    #     return file_parts

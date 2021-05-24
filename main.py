@@ -77,6 +77,22 @@ async def get_file_info(file_id: str):
     return file_in_db
 
 
+@app.get('/command/get_file_name')
+async def get_file_name(content: dict):
+    file_id = content.get('file_id')
+    file_db_manager = FileDBManager()
+    file_db_obj = file_db_manager.get(file_id)
+    file_name = file_db_obj["file_name"]
+    # res = await send_requests.get_file({
+    #     'file_name': file_name,
+    #     'file_id': file_id,
+    # })
+    # for stream in res:
+    #     resp = await stream
+    #     print(92, resp)
+    return file_name
+
+
 @app.post("/command/map")
 async def start_map_phase(map_request: schemas.StartMapPhaseRequest):
     logger.info(jsonable_encoder(map_request))
