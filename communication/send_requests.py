@@ -1,128 +1,151 @@
-import json
-import os.path
-import requests
+import asyncio
+import datetime
 
-config_data_nodes_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'json', 'data_nodes.json')
+from aiohttp import ClientSession
 
-with open(os.path.join(os.path.dirname(__file__), '..', 'config', 'json', 'data_nodes.json')) as json_data:
-    data = json.load(json_data)
+import schemas
+from config.config_provider import config
+from config.logger import arbiter_logger
+from local_database.utils import FileDBManager, ShuffleDBManager
 
-with open(config_data_nodes_path) as data_nodes_file:
-    data_nodes_data_json = json.load(data_nodes_file)
-
-
-class ShuffleManager:
-    N = len(data_nodes_data_json['data_nodes'])
-
-    def __init__(self):
-        self.counter = 0
-        self.list_of_min = []
-        self.list_of_max = []
-
-    def min_max_hash(self, context):
-        return send_request_to_data_nodes(context, 'min_max_hash')
-
-    def hash(self, context, files_info_dict):
-        response = None
-        self.list_of_min.append(context['list_keys'][0])
-        self.list_of_max.append(context['list_keys'][1])
-        self.counter += 1
-
-        if self.counter == ShuffleManager.N:
-            max_hash = max(self.list_of_max)
-            min_hash = min(self.list_of_min)
-            step = (max_hash - min_hash) / ShuffleManager.N
-
-            context = {
-                'nodes_keys': [],
-                'max_hash': max_hash,
-                'file_name': context['file_name'],
-                'field_delimiter': context['field_delimiter'],
-            }
-
-            mid_hash = min_hash
-            self.counter = 0
-
-            for i in data_nodes_data_json['data_nodes']:
-                self.counter += 1
-                if self.counter == ShuffleManager.N:
-                    end_hash = max_hash
-                else:
-                    end_hash = mid_hash + step
-                context['nodes_keys'].append({
-                    'data_node_ip': i['data_node_address'],
-                    'hash_keys_range': [mid_hash, end_hash]
-                })
-                mid_hash += step
-
-            for i in files_info_dict['files']:
-                fn, ext = os.path.splitext(context['file_name'])
-                file_name = fn.split("_")[0] + ext
-                if file_name == os.path.basename(i["file_name"]):
-                    i['key_ranges'] = context['nodes_keys']
-
-            for i in data_nodes_data_json['data_nodes']:
-                url = f'http://{i["data_node_address"]}/command/shuffle'
-                response = requests.post(url, json=context)
-            self.counter = 0
-
-            return response
+logger = arbiter_logger.get_logger(__name__)
 
 
-def create_config_and_filesystem(file_name):
-    diction = {'file_name': file_name}
-    return send_request_to_data_nodes(diction, 'create_config_and_filesystem')
+async def create_config_and_filesystem(file_name, file_id):
+    return await send_request_to_data_nodes({'file_name': file_name, 'file_id': file_id},
+                                            'create_config_and_filesystem')
 
 
-def map(json_data_obj):
-    diction = {
-        'mapper': json_data_obj['mapper'],
-        'field_delimiter': json_data_obj['field_delimiter'],
-        'destination_file': json_data_obj['destination_file'],
-    }
-    if 'server_source_file' in json_data_obj:
-        diction['server_src'] = json_data_obj['server_source_file']
-    else:
-        diction['source_file'] = json_data_obj['source_file']
+async def send_request_to_data_nodes(data_to_data_node, command):
+    logger.info(f"Send request to data nodes: {data_to_data_node}")
+    async with ClientSession() as session:
+        async def send_request(ip_address):
+            headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+            url = f'http://{ip_address}/command/{command}'  # noqa
+            try:
+                async with session.request(url=url,
+                                           headers=headers,
+                                           json=data_to_data_node,
+                                           timeout=10,
+                                           method="POST") as resp:
+                    return await resp.json(content_type=None)
+            except asyncio.exceptions.TimeoutError:
+                pass
 
-    return send_request_to_data_nodes(diction, 'map')
+        tasks = []
+        for data_node in config.data_nodes:
+            tasks.append(asyncio.ensure_future(send_request(data_node["data_node_address"])))
 
-
-def reduce(json_data_obj):
-    diction = {
-        'reducer': json_data_obj['reducer'],
-        'destination_file': json_data_obj['destination_file'],
-        'field_delimiter': json_data_obj['field_delimiter']
-
-    }
-    if 'server_source_file' in json_data_obj:
-        diction['server_src'] = json_data_obj['server_source_file']
-    else:
-        diction['source_file'] = json_data_obj['source_file']
-
-    return send_request_to_data_nodes(diction, 'reduce')
+        await asyncio.gather(*tasks)
 
 
-def clear_data(context, files_info_dict):
-    for item in files_info_dict['files']:
-        if item['file_name'] == context['folder_name']:
-            if context["remove_all_data"]:
-                files_info_dict['files'].remove(item)
-                break
+async def start_map_phase(map_request):
+    return await send_request_to_data_nodes(map_request.__dict__, 'map')
+
+
+async def start_reduce_phase(reduce_request):
+    return await send_request_to_data_nodes(reduce_request.__dict__, 'reduce')
+
+
+async def min_max_hash(shuffle_request: schemas.StartShufflePhaseRequest):
+    return await send_request_to_data_nodes(shuffle_request.__dict__, 'min_max_hash')
+
+
+async def generate_hash_ranges(hash_request: schemas.HashRequest):
+    logger.info("Received hash key ranges")
+    logger.info(f"Min hash value: {hash_request.min_hash_value}")
+    logger.info(f"Max hash value: {hash_request.max_hash_value}")
+
+    shuffle_db_manager = ShuffleDBManager()
+    shuffle_db_obj = shuffle_db_manager.get(hash_request.file_id)
+    shuffle_db_obj["list_of_max_hashes"].append(hash_request.max_hash_value)
+    shuffle_db_obj["list_of_min_hashes"].append(hash_request.min_hash_value)
+    shuffle_db_obj["data_nodes_processed"] += 1
+    shuffle_db_obj["updated_at"] = datetime.datetime.now().isoformat(),
+    shuffle_db_manager.save(hash_request.file_id, shuffle_db_obj)
+
+    logger.info(f"Data nodes processed: {shuffle_db_obj['data_nodes_processed']}")
+
+    file_db_manager = FileDBManager()
+    file_db_obj = file_db_manager.get(hash_request.file_id)
+    data_nodes_ip_addresses = file_db_manager.get_list_of_data_nodes_ip_addresses(hash_request.file_id)
+
+    # If we get key hash ranges from all data nodes - start shuffle phase
+    if shuffle_db_obj["data_nodes_processed"] == len(data_nodes_ip_addresses):
+        logger.info("Received hash key ranges from all data nodes")
+        max_hash = max(shuffle_db_obj["list_of_max_hashes"])
+        min_hash = min(shuffle_db_obj["list_of_min_hashes"])
+        step = (max_hash - min_hash) / len(data_nodes_ip_addresses)
+
+        data_to_data_node = {
+            'nodes_keys': [],
+            'max_hash': max_hash,
+            'file_id': hash_request.file_id,
+            'field_delimiter': file_db_obj["field_delimiter"],
+        }
+        mid_hash = min_hash
+
+        for index, data_node in enumerate(config.data_nodes):
+            if index == len(data_nodes_ip_addresses):
+                end_hash = max_hash
             else:
-                item = {
-                    'file_name': context["folder_name"],
-                    'lock': False,
-                    'last_fragment_block_size': 1024,
-                    'key_ranges': None,
-                    'file_fragments': []
-                }
-    return send_request_to_data_nodes(context, 'clear_data')
+                end_hash = mid_hash + step
+            data_to_data_node['nodes_keys'].append({
+                'data_node_ip': data_node['data_node_address'],
+                'hash_keys_range': [mid_hash, end_hash]
+            })
+            mid_hash += step
+
+        file_db_obj["key_ranges"] = data_to_data_node.get('nodes_keys')
+        file_db_obj["updated_at"] = datetime.datetime.now().isoformat(),
+        file_db_manager.save(hash_request.file_id, file_db_obj)
+
+        logger.info(f"Data to data nodes: {data_to_data_node}")
+        logger.info("Sending data to data nodes")
+        await send_request_to_data_nodes(data_to_data_node, 'shuffle')
 
 
-def send_request_to_data_nodes(context, command):
-    for item in data['data_nodes']:
-        url = f'http://{item["data_node_address"]}/command/{command}'
-        response = requests.post(url, json=context)
-        response.raise_for_status()
-    return response.json()
+async def clear_data(clear_data_request: schemas.ClearDataRequest):
+    shuffle_db_manager = ShuffleDBManager()
+    file_db_obj = FileDBManager().get(clear_data_request.file_id)
+
+    clear_data_request.folder_name = file_db_obj["file_name"]
+
+    if clear_data_request.remove_all_data:
+        shuffle_db_manager.delete(clear_data_request.file_id)
+    else:
+        shuffle_db_manager.reset_obj(clear_data_request.file_id)
+
+    return await send_request_to_data_nodes(clear_data_request.__dict__, 'clear_data')
+
+
+# async def get_file(content: dict):
+    # return await send_request_to_data_nodes(content, 'get_file')
+    # return FileDBManager().get(content['file_id'])['file_name']
+    # logger.info(f"Send request to data nodes: {data_to_data_node}")
+    # async with ClientSession() as session:
+    #     async def send_request(ip_address):
+    #         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+    #         url = f'http://{ip_address}/command/get_file'  # noqa
+    #         try:
+    #             file_parts.append(await session.request(url=url,
+    #                                                     headers=headers,
+    #                                                     json=content,
+    #                                                     timeout=10,
+    #                                                     method="GET"))
+    #             # res = resp.
+    #             # file_parts.append(resp)
+    #             # print(136, resp)
+    #             # return resp
+    #         except asyncio.exceptions.TimeoutError:
+    #             pass
+    #
+    #     tasks = []
+    #     file_parts = []
+    #     for data_node in config.data_nodes:
+    #         await send_request(data_node["data_node_address"])
+    #         # tasks.append(asyncio.ensure_future(send_request(data_node["data_node_address"])))
+    #
+    #     await asyncio.gather(*tasks)
+    #     print(148, file_parts)
+    #     return file_parts
