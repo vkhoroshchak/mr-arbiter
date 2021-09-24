@@ -3,11 +3,15 @@
   "data_nodes": [
     {
       "data_node_id": 1,
-      "data_node_address": "127.0.0.1:5002"
+      "data_node_address": "0.0.0.0:5001"
     },
     {
       "data_node_id": 2,
-      "data_node_address": "127.0.0.1:5003"
+      "data_node_address": "0.0.0.0:5002"
+    },
+    {
+      "data_node_id": 3,
+      "data_node_address": "0.0.0.0:5003"
     }
   ]
 }

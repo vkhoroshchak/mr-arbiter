@@ -9,8 +9,11 @@ from config.config_provider import config
 
 class BaseDB:
     def __init__(self):
-        self.r = redis.StrictRedis(charset="utf-8",
-                                   decode_responses=True)
+        self.r = redis.StrictRedis(
+            host="redis",
+            charset="utf-8",
+            decode_responses=True
+        )
 
     def save(self, file_id: str, obj):
         return self.r.set(file_id, json.dumps(obj))
