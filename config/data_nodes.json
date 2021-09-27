@@ -3,15 +3,15 @@
   "data_nodes": [
     {
       "data_node_id": 1,
-      "data_node_address": "0.0.0.0:5001"
+      "data_node_address": "mr-data-node_data-node-1_1:5001"
     },
     {
       "data_node_id": 2,
-      "data_node_address": "0.0.0.0:5002"
+      "data_node_address": "mr-data-node_data-node-2_1:5002"
     },
     {
       "data_node_id": 3,
-      "data_node_address": "0.0.0.0:5003"
+      "data_node_address": "mr-data-node_data-node-3_1:5003"
     }
   ]
 }

@@ -64,7 +64,8 @@ class FileDBManager(BaseDB):
 class ShuffleDBManager(BaseDB):
     def __init__(self):
         super().__init__()
-        self.r = redis.StrictRedis(db=1,
+        self.r = redis.StrictRedis(host="redis",
+                                   db=1,
                                    charset="utf-8",
                                    decode_responses=True)
 

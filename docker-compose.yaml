@@ -3,14 +3,23 @@ services:
   backend:
     build: .
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     volumes:
       - .:/app
     depends_on:
       - "redis"
+    networks:
+      - mr_network
 
   redis:
     image: "redis:alpine"
     command: redis-server /usr/local/etc/redis/redis.conf
     volumes:
       - ./app/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - mr_network
+
+networks:
+  mr_network:
+    external: true
+
