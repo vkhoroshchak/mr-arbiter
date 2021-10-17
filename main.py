@@ -17,7 +17,8 @@ app = FastAPI()
 @app.post('/command/create_config_and_filesystem')
 async def create_config_and_filesystem(file: schemas.FileSchema):
     file_db_manager = FileDBManager()
-    file_id = file_db_manager.add_new_record(file_name=file.file_name, field_delimiter=file.field_delimiter)
+    file_id = file_db_manager.add_new_record(file_name=file.file_name, field_delimiter=file.field_delimiter,
+                                             md5_hash=file.md5_hash)
 
     logger.info(f"Created file in DB with id {file_id}")
     await send_requests.create_config_and_filesystem(file.file_name, file_id)
@@ -26,14 +27,13 @@ async def create_config_and_filesystem(file: schemas.FileSchema):
 
 
 @app.get("/command/check_if_file_is_on_cluster")
-async def check_if_file_is_on_cluster(file_id: str):
+async def check_if_file_is_on_cluster(check_if_file_is_on_cluster_request: schemas.CheckIfFileIsOnClusterRequest):
     file_db_manager = FileDBManager()
-    file_in_db = file_db_manager.get(file_id)
+    file_exists_in_db, file_id = file_db_manager.check_if_file_exists(check_if_file_is_on_cluster_request.file_name,
+                                                                      check_if_file_is_on_cluster_request.md5_hash)
+    logger.info(f"Response from check_if_file_is_on_cluster on arbiter: {file_exists_in_db, file_id}")
 
-    if file_in_db:
-        return {"is_file_on_cluster": True}
-    else:
-        return {"is_file_on_cluster": False}
+    return {"is_file_on_cluster": file_exists_in_db, "file_id": file_id}
 
 
 @app.post('/command/move_file_to_init_folder')

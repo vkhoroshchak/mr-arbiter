@@ -1,18 +1,23 @@
-from typing import Any, Optional
-
 from pydantic import BaseModel
+from typing import Any, Optional
 
 
 class FileSchema(BaseModel):
     field_delimiter: Optional[str]
     file_name: Optional[str]
     file_id: Optional[str]
+    md5_hash: Optional[str]
 
 
 class RefreshTableRequest(BaseModel):
     file_id: str
     ip: str
     segment_name: str
+
+
+class CheckIfFileIsOnClusterRequest(BaseModel):
+    file_name: str
+    md5_hash: str
 
 
 class PhaseRequest(BaseModel):
@@ -43,10 +48,11 @@ class HashRequest(BaseModel):
 
 class FileDBInfo(BaseModel):
     file_name: str
-    key_ranges: list
-    file_fragments: list
-    created_at: str
-    updated_at: str
+    key_ranges: Optional[list]
+    file_fragments: Optional[list]
+    created_at: Optional[str]
+    updated_at: Optional[str]
+    md5_hash: Optional[str]
 
     class Config:
         orm_mode = True

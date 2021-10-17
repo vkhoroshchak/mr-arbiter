@@ -1,8 +1,7 @@
 import datetime
 import json
-import uuid
-
 import redis
+import uuid
 
 from config.config_provider import config
 
@@ -26,11 +25,18 @@ class BaseDB:
 
 
 class FileDBManager(BaseDB):
+    def __init__(self):
+        super().__init__()
+        self.r = redis.StrictRedis(host="redis",
+                                   db=2,
+                                   charset="utf-8",
+                                   decode_responses=True)
 
-    def add_new_record(self, file_name, field_delimiter):
+    def add_new_record(self, file_name, field_delimiter, md5_hash):
         file_id = str(uuid.uuid4())
         file = {
             "file_name": file_name,
+            "md5_hash": md5_hash,
             "field_delimiter": field_delimiter,
             "lock": False,
             "last_fragment_block_size": 1024,
@@ -59,6 +65,13 @@ class FileDBManager(BaseDB):
         data_nodes_ip_addresses = [config.get_data_node_ip(data_node_id) for data_node_id in data_nodes_ids]
 
         return data_nodes_ip_addresses
+
+    def check_if_file_exists(self, file_name, md5_hash):
+        for key in self.r.keys():
+            file_obj = json.loads(self.r.get(key))
+            if file_obj["file_name"] == file_name and file_obj["md5_hash"] == md5_hash:
+                return True, key
+        return False, ''
 
 
 class ShuffleDBManager(BaseDB):
