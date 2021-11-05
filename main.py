@@ -59,7 +59,7 @@ async def refresh_table(refresh_table_request: schemas.RefreshTableRequest):
                 data_node_id: refresh_table_request.segment_name
             }
         )
-        file_in_db["updated_at"] = datetime.datetime.now().isoformat(),
+        file_in_db["updated_at"] = datetime.datetime.now().isoformat()
         res = file_db_manager.save(refresh_table_request.file_id, file_in_db)
         return res
 
