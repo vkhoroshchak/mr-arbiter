@@ -1,5 +1,4 @@
 import datetime
-
 from fastapi import FastAPI, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 
@@ -51,14 +50,10 @@ async def refresh_table(refresh_table_request: schemas.RefreshTableRequest):
     file_db_manager = FileDBManager()
     file_in_db = file_db_manager.get(refresh_table_request.file_id)
     data_node_ip = refresh_table_request.ip.split('//')[-1]
-    data_node_id = config.get_data_node_id(data_node_ip)
 
-    if data_node_id:
-        file_in_db["file_fragments"].append(
-            {
-                data_node_id: refresh_table_request.segment_name
-            }
-        )
+    if data_node_ip:
+        file_in_db["file_fragments"][data_node_ip] = file_in_db["file_fragments"].setdefault(data_node_ip, [])
+        file_in_db["file_fragments"][data_node_ip].append(refresh_table_request.segment_name)
         file_in_db["updated_at"] = datetime.datetime.now().isoformat()
         res = file_db_manager.save(refresh_table_request.file_id, file_in_db)
         return res
