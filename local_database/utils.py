@@ -41,7 +41,7 @@ class FileDBManager(BaseDB):
             "lock": False,
             "last_fragment_block_size": 1024,
             "key_ranges": [],
-            "file_fragments": [],
+            "file_fragments": {},
             "created_at": datetime.datetime.now().isoformat(),
             "updated_at": datetime.datetime.now().isoformat(),
         }
@@ -61,7 +61,7 @@ class FileDBManager(BaseDB):
 
     def get_list_of_data_nodes_ip_addresses(self, file_id: str):
         file_in_db = self.get(file_id)
-        data_nodes_ids = {list(data_node_id.keys())[0] for data_node_id in file_in_db["file_fragments"]}
+        data_nodes_ids = list(file_in_db["file_fragments"].keys())
         data_nodes_ip_addresses = [config.get_data_node_ip(data_node_id) for data_node_id in data_nodes_ids]
 
         return data_nodes_ip_addresses

@@ -49,7 +49,7 @@ class HashRequest(BaseModel):
 class FileDBInfo(BaseModel):
     file_name: str
     key_ranges: Optional[list]
-    file_fragments: Optional[list]
+    file_fragments: Optional[dict]
     created_at: Optional[str]
     updated_at: Optional[str]
     md5_hash: Optional[str]
