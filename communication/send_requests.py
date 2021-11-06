@@ -119,14 +119,17 @@ async def clear_data(clear_data_request: schemas.ClearDataRequest):
     file_db_manager = FileDBManager()
     file_db_obj = file_db_manager.get(clear_data_request.file_id)
 
-    clear_data_request.folder_name = file_db_obj["file_name"]
+    if file_db_obj:
+        clear_data_request.folder_name = file_db_obj["file_name"]
 
-    if clear_data_request.remove_all_data:
-        shuffle_db_manager.delete(clear_data_request.file_id)
-        file_db_manager.delete(clear_data_request.file_id)
+        if clear_data_request.remove_all_data:
+            shuffle_db_manager.delete(clear_data_request.file_id)
+            file_db_manager.delete(clear_data_request.file_id)
+        else:
+            shuffle_db_manager.reset_obj(clear_data_request.file_id)
+            file_db_manager.reset_obj(clear_data_request.file_id)
+
+        return await send_request_to_data_nodes(clear_data_request.__dict__, 'clear_data',
+                                                data_nodes=get_file_data_nodes_list(clear_data_request.file_id))
     else:
-        shuffle_db_manager.reset_obj(clear_data_request.file_id)
-        file_db_manager.reset_obj(clear_data_request.file_id)
-
-    return await send_request_to_data_nodes(clear_data_request.__dict__, 'clear_data',
-                                            data_nodes=get_file_data_nodes_list(clear_data_request.file_id))
+        return {}

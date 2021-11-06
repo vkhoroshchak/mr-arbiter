@@ -18,7 +18,8 @@ class BaseDB:
         return self.r.set(file_id, json.dumps(obj))
 
     def get(self, file_id: str):
-        return json.loads(self.r.get(file_id))
+        resp = self.r.get(file_id)
+        return json.loads(resp) if resp else {}
 
     def delete(self, file_id: str):
         return self.r.delete(file_id)
@@ -61,10 +62,12 @@ class FileDBManager(BaseDB):
 
     def get_list_of_data_nodes_ip_addresses(self, file_id: str):
         file_in_db = self.get(file_id)
-        data_nodes_ids = list(file_in_db["file_fragments"].keys())
-        data_nodes_ip_addresses = [config.get_data_node_ip(data_node_id) for data_node_id in data_nodes_ids]
+        if file_in_db:
+            data_nodes_ids = list(file_in_db["file_fragments"].keys())
+            data_nodes_ip_addresses = [config.get_data_node_ip(data_node_id) for data_node_id in data_nodes_ids]
 
-        return data_nodes_ip_addresses
+            return data_nodes_ip_addresses
+        return []
 
     def check_if_file_exists(self, file_name, md5_hash):
         for key in self.r.keys():
