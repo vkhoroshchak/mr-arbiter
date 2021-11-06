@@ -41,7 +41,9 @@ async def send_request_to_data_nodes(data_to_data_node, command, data_nodes=conf
 def get_file_data_nodes_list(file_id: str):
     file_db_manager = FileDBManager()
     file_in_db = file_db_manager.get(file_id)
-    return list(file_in_db["file_fragments"].keys())
+    if file_in_db:
+        return list(file_in_db["file_fragments"].keys())
+    return []
 
 
 async def start_map_phase(map_request):
