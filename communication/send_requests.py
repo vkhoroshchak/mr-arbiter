@@ -42,7 +42,7 @@ def get_file_data_nodes_list(file_id: str):
     file_db_manager = FileDBManager()
     file_in_db = file_db_manager.get(file_id)
     if file_in_db:
-        return list(file_in_db["file_fragments"].keys())
+        return [{"data_node_address": x} for x in list(file_in_db["file_fragments"].keys())]
     return []
 
 
