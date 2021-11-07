@@ -77,7 +77,11 @@ async def get_file_name(content: dict):
     file_id = content.get('file_id')
     file_db_manager = FileDBManager()
     file_db_obj = file_db_manager.get(file_id)
-    file_name = file_db_obj["file_name"]
+    if file_db_obj:
+        file_name = file_db_obj["file_name"]
+        return file_name
+    else:
+        return ""
     # res = await send_requests.get_file({
     #     'file_name': file_name,
     #     'file_id': file_id,
@@ -85,7 +89,6 @@ async def get_file_name(content: dict):
     # for stream in res:
     #     resp = await stream
     #     print(92, resp)
-    return file_name
 
 
 @app.post("/command/map")
