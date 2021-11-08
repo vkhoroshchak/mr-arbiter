@@ -32,6 +32,19 @@ async def check_if_file_is_on_cluster(check_if_file_is_on_cluster_request: schem
                                                                       check_if_file_is_on_cluster_request.md5_hash)
     logger.info(f"Response from check_if_file_is_on_cluster on arbiter: {file_exists_in_db, file_id}")
 
+    if file_exists_in_db:
+        data_nodes = file_db_manager.get_list_of_data_nodes_ip_addresses(file_id)
+        logger.info("DATA NODES 37")
+        logger.info(file_id)
+        logger.info(data_nodes)
+        logger.info("DATA NODES 39")
+        resp = await send_requests.check_if_file_is_on_cluster({"file_id": file_id}, data_nodes)
+        logger.info("RESP arbiter main 36")
+        logger.info(resp)
+        logger.info("RESP arbiter main 38")
+        file_exists_in_db = resp['is_file_on_data_nodes']
+        if not file_exists_in_db:
+            file_id = ''
     return {"is_file_on_cluster": file_exists_in_db, "file_id": file_id}
 
 
@@ -69,7 +82,10 @@ async def refresh_table(refresh_table_request: schemas.RefreshTableRequest):
 async def get_file_info(file_id: str):
     file_db_manager = FileDBManager()
     file_in_db = file_db_manager.get(file_id)
-    return file_in_db
+    if file_in_db:
+        return file_in_db
+    else:
+        raise HTTPException(status_code=404, detail="File not found!")
 
 
 @app.get('/command/get_file_name')

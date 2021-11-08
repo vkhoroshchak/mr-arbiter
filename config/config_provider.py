@@ -18,7 +18,7 @@ class ConfigProvider:
     def get_data_node_ip(self, data_node_id: int):
         for data_node in self.data_nodes:
             if data_node.get("data_node_id") == data_node_id:
-                return data_node.get("data_node_address")
+                return {"data_node_address": data_node.get("data_node_address")}
 
     def get_data_node_id(self, data_node_ip: int):
         for data_node in self.data_nodes:

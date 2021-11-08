@@ -4,6 +4,9 @@ import redis
 import uuid
 
 from config.config_provider import config
+from config.logger import arbiter_logger
+
+logger = arbiter_logger.get_logger(__name__)
 
 
 class BaseDB:
@@ -63,8 +66,12 @@ class FileDBManager(BaseDB):
     def get_list_of_data_nodes_ip_addresses(self, file_id: str):
         file_in_db = self.get(file_id)
         if file_in_db:
+            logger.info("FILE IN DB EXISTS!")
             data_nodes_ids = list(file_in_db["file_fragments"].keys())
-            data_nodes_ip_addresses = [config.get_data_node_ip(data_node_id) for data_node_id in data_nodes_ids]
+            logger.info("utils 70")
+            logger.info(data_nodes_ids)
+            logger.info("utils 72")
+            data_nodes_ip_addresses = [{"data_node_address": data_node_id} for data_node_id in data_nodes_ids]
 
             return data_nodes_ip_addresses
         return []
