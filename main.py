@@ -34,14 +34,7 @@ async def check_if_file_is_on_cluster(check_if_file_is_on_cluster_request: schem
 
     if file_exists_in_db:
         data_nodes = file_db_manager.get_list_of_data_nodes_ip_addresses(file_id)
-        logger.info("DATA NODES 37")
-        logger.info(file_id)
-        logger.info(data_nodes)
-        logger.info("DATA NODES 39")
         resp = await send_requests.check_if_file_is_on_cluster({"file_id": file_id}, data_nodes)
-        logger.info("RESP arbiter main 36")
-        logger.info(resp)
-        logger.info("RESP arbiter main 38")
         file_exists_in_db = resp['is_file_on_data_nodes']
         if not file_exists_in_db:
             file_id = ''
@@ -65,6 +58,7 @@ async def refresh_table(refresh_table_request: schemas.RefreshTableRequest):
     data_node_ip = refresh_table_request.ip.split('//')[-1]
 
     if data_node_ip:
+        file_in_db["file_fragments"] = file_in_db.setdefault("file_fragments", {})
         file_in_db["file_fragments"][data_node_ip] = file_in_db["file_fragments"].setdefault(data_node_ip, [])
         file_in_db["file_fragments"][data_node_ip].append(refresh_table_request.segment_name)
         file_in_db["updated_at"] = datetime.datetime.now().isoformat()

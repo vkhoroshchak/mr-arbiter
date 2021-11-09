@@ -17,7 +17,6 @@ async def create_config_and_filesystem(file_name, file_id):
 
 async def check_if_file_is_on_cluster(content, data_nodes=config.data_nodes):
     async with ClientSession() as session:
-        logger.info("I am in loop_through_data_nodes method!")
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         for data_node in data_nodes:
             url = f'http://{data_node["data_node_address"]}/command/check_if_file_is_on_cluster'
@@ -28,7 +27,6 @@ async def check_if_file_is_on_cluster(content, data_nodes=config.data_nodes):
                                            timeout=10,
                                            method="GET") as resp:
                     response = await resp.json(content_type=None)
-                    logger.info(response)
                     if response['is_file_on_data_node']:
                         return {'is_file_on_data_nodes': True}
             except asyncio.exceptions.TimeoutError:
@@ -149,12 +147,9 @@ async def clear_data(clear_data_request: schemas.ClearDataRequest):
     if file_db_obj:
         clear_data_request.folder_name = file_db_obj["file_name"]
 
-        resp = await send_request_to_data_nodes(clear_data_request.__dict__, 'clear_data',
+        await send_request_to_data_nodes(clear_data_request.__dict__, 'clear_data',
                                                 data_nodes=file_db_manager.get_list_of_data_nodes_ip_addresses(
                                                     clear_data_request.file_id))
-        logger.info("send_requests 161")
-        logger.info(resp)
-        logger.info("send_requests 163")
         # if resp == JSONResponse("Clear data request has been received by data node!"):
         if clear_data_request.remove_all_data:
             shuffle_db_manager.delete(clear_data_request.file_id)

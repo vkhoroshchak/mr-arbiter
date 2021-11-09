@@ -68,9 +68,6 @@ class FileDBManager(BaseDB):
         if file_in_db:
             logger.info("FILE IN DB EXISTS!")
             data_nodes_ids = list(file_in_db["file_fragments"].keys())
-            logger.info("utils 70")
-            logger.info(data_nodes_ids)
-            logger.info("utils 72")
             data_nodes_ip_addresses = [{"data_node_address": data_node_id} for data_node_id in data_nodes_ids]
 
             return data_nodes_ip_addresses
@@ -79,7 +76,7 @@ class FileDBManager(BaseDB):
     def check_if_file_exists(self, file_name, md5_hash):
         for key in self.r.keys():
             file_obj = json.loads(self.r.get(key))
-            if file_obj["file_name"] == file_name and file_obj["md5_hash"] == md5_hash:
+            if file_obj.get("file_name") == file_name and file_obj.get("md5_hash") == md5_hash:
                 return True, key
         return False, ''
 
