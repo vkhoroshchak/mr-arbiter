@@ -55,7 +55,7 @@ class FileDBManager(BaseDB):
 
             return file_id
         except Exception as e:
-            logger.info("Caught exception!" + e)
+            logger.info("Caught exception!" + str(e))
             traceback.print_exc()
 
     def update(self, file_id, attrs):
@@ -69,7 +69,7 @@ class FileDBManager(BaseDB):
             self.save(file_id, file_in_db)
             return file_in_db
         except Exception as e:
-            logger.info("Caught exception!" + e)
+            logger.info("Caught exception!" + str(e))
             traceback.print_exc()
 
     def get_list_of_data_nodes_ip_addresses(self, file_id: str):
@@ -83,7 +83,7 @@ class FileDBManager(BaseDB):
                 return data_nodes_ip_addresses
             return []
         except Exception as e:
-            logger.info("Caught exception!" + e)
+            logger.info("Caught exception!" + str(e))
             traceback.print_exc()
 
     def check_if_file_exists(self, file_name, md5_hash):
@@ -94,7 +94,7 @@ class FileDBManager(BaseDB):
                     return True, key
             return False, ''
         except Exception as e:
-            logger.info("Caught exception!" + e)
+            logger.info("Caught exception!" + str(e))
             traceback.print_exc()
 
 
@@ -119,7 +119,7 @@ class ShuffleDBManager(BaseDB):
 
             return file_id
         except Exception as e:
-            logger.info("Caught exception!" + e)
+            logger.info("Caught exception!" + str(e))
             traceback.print_exc()
 
     def reset_obj(self, file_id: str):
@@ -136,5 +136,5 @@ class ShuffleDBManager(BaseDB):
 
                 self.save(file_id, file_db_obj)
         except Exception as e:
-            logger.info("Caught exception!" + e)
+            logger.info("Caught exception!" + str(e))
             traceback.print_exc()

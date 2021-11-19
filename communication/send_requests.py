@@ -35,7 +35,7 @@ async def check_if_file_is_on_cluster(content, data_nodes=config.data_nodes):
                     pass
             return {'is_file_on_data_nodes': False}
     except Exception as e:
-        logger.info("Caught exception!" + e)
+        logger.info("Caught exception!" + str(e))
         traceback.print_exc()
 
 
@@ -63,7 +63,7 @@ async def send_request_to_data_nodes(data_to_data_node, command, data_nodes=conf
 
             await asyncio.gather(*tasks)
     except Exception as e:
-        logger.info("Caught exception!" + e)
+        logger.info("Caught exception!" + str(e))
         traceback.print_exc()
 
 
@@ -148,7 +148,7 @@ async def generate_hash_ranges(hash_request: schemas.HashRequest):
             logger.info("Sending data to data nodes")
             await send_request_to_data_nodes(data_to_data_node, 'shuffle', data_nodes=data_nodes_ip_addresses)
     except Exception as e:
-        logger.info("Caught exception!" + e)
+        logger.info("Caught exception!" + str(e))
         traceback.print_exc()
 
 
@@ -174,5 +174,5 @@ async def clear_data(clear_data_request: schemas.ClearDataRequest):
         else:
             return {}
     except Exception as e:
-        logger.info("Caught exception!" + e)
+        logger.info("Caught exception!" + str(e))
         traceback.print_exc()

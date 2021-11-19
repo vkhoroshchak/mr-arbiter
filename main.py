@@ -26,7 +26,7 @@ async def create_config_and_filesystem(file: schemas.FileSchema):
 
         return {'distribution': config.distribution, 'file_id': file_id}
     except Exception as e:
-        logger.info("Caught exception!" + e)
+        logger.info("Caught exception!" + str(e))
         traceback.print_exc()
 
 
@@ -46,7 +46,7 @@ async def check_if_file_is_on_cluster(check_if_file_is_on_cluster_request: schem
                 file_id = ''
         return {"is_file_on_cluster": file_exists_in_db, "file_id": file_id}
     except Exception as e:
-        logger.info("Caught exception!" + e)
+        logger.info("Caught exception!" + str(e))
         traceback.print_exc()
 
 
@@ -81,7 +81,7 @@ async def refresh_table(refresh_table_request: schemas.RefreshTableRequest):
                 detail="Data node ip does not exist"
             )
     except Exception as e:
-        logger.info("Caught exception!" + e)
+        logger.info("Caught exception!" + str(e))
         traceback.print_exc()
 
 
@@ -95,7 +95,7 @@ async def get_file_info(file_id: str):
         else:
             raise HTTPException(status_code=404, detail="File not found!")
     except Exception as e:
-        logger.info("Caught exception!" + e)
+        logger.info("Caught exception!" + str(e))
         traceback.print_exc()
 
 
@@ -118,7 +118,7 @@ async def get_file_name(content: dict):
         #     resp = await stream
         #     print(92, resp)
     except Exception as e:
-        logger.info("Caught exception!" + e)
+        logger.info("Caught exception!" + str(e))
         traceback.print_exc()
 
 
@@ -136,7 +136,7 @@ async def start_shuffle_phase(shuffle_request: schemas.StartShufflePhaseRequest)
         shuffle_db_manager.add_new_record(shuffle_request.file_id)
         await send_requests.min_max_hash(shuffle_request)
     except Exception as e:
-        logger.info("Caught exception!" + e)
+        logger.info("Caught exception!" + str(e))
         traceback.print_exc()
 
 
