@@ -27,7 +27,7 @@ async def create_config_and_filesystem(file: schemas.FileSchema):
         return {'distribution': config.distribution, 'file_id': file_id}
     except Exception as e:
         logger.info("Caught exception!" + str(e))
-        traceback.print_exc()
+        logger.error(e, exc_info=True)
 
 
 @app.get("/command/check_if_file_is_on_cluster")
@@ -47,7 +47,7 @@ async def check_if_file_is_on_cluster(check_if_file_is_on_cluster_request: schem
         return {"is_file_on_cluster": file_exists_in_db, "file_id": file_id}
     except Exception as e:
         logger.info("Caught exception!" + str(e))
-        traceback.print_exc()
+        logger.error(e, exc_info=True)
 
 
 @app.post('/command/move_file_to_init_folder')
@@ -82,7 +82,7 @@ async def refresh_table(refresh_table_request: schemas.RefreshTableRequest):
             )
     except Exception as e:
         logger.info("Caught exception!" + str(e))
-        traceback.print_exc()
+        logger.error(e, exc_info=True)
 
 
 @app.get("/command/get_file_info", response_model=schemas.FileDBInfo)
@@ -96,7 +96,7 @@ async def get_file_info(file_id: str):
             raise HTTPException(status_code=404, detail="File not found!")
     except Exception as e:
         logger.info("Caught exception!" + str(e))
-        traceback.print_exc()
+        logger.error(e, exc_info=True)
 
 
 @app.get('/command/get_file_name')
@@ -119,7 +119,7 @@ async def get_file_name(content: dict):
         #     print(92, resp)
     except Exception as e:
         logger.info("Caught exception!" + str(e))
-        traceback.print_exc()
+        logger.error(e, exc_info=True)
 
 
 @app.post("/command/map")
@@ -137,7 +137,7 @@ async def start_shuffle_phase(shuffle_request: schemas.StartShufflePhaseRequest)
         await send_requests.min_max_hash(shuffle_request)
     except Exception as e:
         logger.info("Caught exception!" + str(e))
-        traceback.print_exc()
+        logger.error(e, exc_info=True)
 
 
 @app.post("/command/hash")
