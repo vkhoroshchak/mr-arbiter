@@ -43,7 +43,10 @@ async def check_if_file_is_on_cluster(check_if_file_is_on_cluster_request: schem
             resp = await send_requests.check_if_file_is_on_cluster({"file_id": file_id}, data_nodes)
             file_exists_in_db = resp['is_file_on_data_nodes']
             if not file_exists_in_db:
+                await send_requests.clear_data(
+                    schemas.ClearDataRequest.parse_obj({"file_id": file_id, "remove_all_data": True}))
                 file_id = ''
+        logger.info(f"FINAL Response from check_if_file_is_on_cluster on arbiter: {file_exists_in_db, file_id}")
         return {"is_file_on_cluster": file_exists_in_db, "file_id": file_id}
     except Exception as e:
         logger.info("Caught exception!" + str(e))
