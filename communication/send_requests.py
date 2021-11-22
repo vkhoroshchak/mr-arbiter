@@ -126,6 +126,7 @@ async def generate_hash_ranges(hash_request: schemas.HashRequest):
                 'max_hash': max_hash,
                 'file_id': hash_request.file_id,
                 'field_delimiter': file_db_obj["field_delimiter"],
+                'distribution': config.distribution
             }
             mid_hash = min_hash
 
