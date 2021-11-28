@@ -151,7 +151,7 @@ async def generate_hash_ranges(hash_request: schemas.HashRequest):
             mid_hash = min_hash
 
             for index, data_node in enumerate(data_nodes_ip_addresses):
-                if index == len(data_nodes_ip_addresses):
+                if index + 1 == len(data_nodes_ip_addresses):
                     end_hash = max_hash
                 else:
                     end_hash = mid_hash + step
