@@ -39,27 +39,29 @@ async def check_if_file_is_on_cluster(content, data_nodes=config.data_nodes):
         logger.error(e, exc_info=True)
 
 
+async def send_request(session, ip_address, command, data_to_data_node, method="POST"):
+    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+    url = f'http://{ip_address}/command/{command}'  # noqa
+    # data_to_data_node["data_nodes"] = data_nodes
+    try:
+        async with session.request(url=url,
+                                   headers=headers,
+                                   json=data_to_data_node,
+                                   timeout=10,
+                                   method=method) as resp:
+            return await resp.json(content_type=None)
+    except asyncio.exceptions.TimeoutError:
+        pass
+
+
 async def send_request_to_data_nodes(data_to_data_node, command, data_nodes=config.data_nodes, method="POST"):
     try:
         logger.info(f"Send request to data nodes: {data_to_data_node}")
         async with ClientSession() as session:
-            async def send_request(ip_address):
-                headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-                url = f'http://{ip_address}/command/{command}'  # noqa
-                # data_to_data_node["data_nodes"] = data_nodes
-                try:
-                    async with session.request(url=url,
-                                               headers=headers,
-                                               json=data_to_data_node,
-                                               timeout=10,
-                                               method=method) as resp:
-                        return await resp.json(content_type=None)
-                except asyncio.exceptions.TimeoutError:
-                    pass
-
             tasks = []
             for data_node in data_nodes:
-                tasks.append(asyncio.ensure_future(send_request(data_node["data_node_address"])))
+                tasks.append(asyncio.ensure_future(send_request(session, data_node["data_node_address"], command,
+                                                                data_to_data_node, method)))
 
             await asyncio.gather(*tasks)
     except Exception as e:
@@ -88,10 +90,29 @@ async def start_reduce_phase(reduce_request):
                                                 reduce_request.file_id))
 
 
-async def min_max_hash(shuffle_request: schemas.StartShufflePhaseRequest):
-    return await send_request_to_data_nodes(shuffle_request.__dict__, 'min_max_hash',
-                                            data_nodes=FileDBManager().get_list_of_data_nodes_ip_addresses(
-                                                shuffle_request.file_id))
+async def min_max_hash(shuffle_request: schemas.StartShufflePhaseRequest, data_nodes):
+    # return await send_request_to_data_nodes(shuffle_request.__dict__, 'min_max_hash', data_nodes=data_nodes)
+    try:
+        content = shuffle_request.__dict__
+        min_max_hash_response = {}
+        async with ClientSession() as session:
+            headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+            for data_node in data_nodes:
+                url = f'http://{data_node["data_node_address"]}/command/min_max_hash'
+                try:
+                    async with session.request(url=url,
+                                               headers=headers,
+                                               json=content,
+                                               timeout=10,
+                                               method="POST") as resp:
+                        response = await resp.json(content_type=None)
+                        min_max_hash_response[data_node["data_node_address"]] = response
+                except asyncio.exceptions.TimeoutError:
+                    pass
+            return min_max_hash_response
+    except Exception as e:
+        logger.info("Caught exception!" + str(e))
+        logger.error(e, exc_info=True)
 
 
 async def generate_hash_ranges(hash_request: schemas.HashRequest):
@@ -147,10 +168,44 @@ async def generate_hash_ranges(hash_request: schemas.HashRequest):
 
             logger.info(f"Data to data nodes: {data_to_data_node}")
             logger.info("Sending data to data nodes")
-            await send_request_to_data_nodes(data_to_data_node, 'shuffle', data_nodes=data_nodes_ip_addresses)
+            response = {
+                "data_to_data_node": data_to_data_node,
+                "data_nodes_ip_addresses": data_nodes_ip_addresses
+            }
+            return response
     except Exception as e:
         logger.info("Caught exception!" + str(e))
         logger.error(e, exc_info=True)
+
+
+async def finish_shuffle(content):
+    # data_to_data_node = content["data_to_data_node"]
+    # data_to_data_node = content["data_to_data_node"]
+    # data_nodes = content["data_nodes_ip_addresses"]
+    data_nodes = list(content.keys())
+    async with ClientSession() as session:
+        async def send_request(ip_address, data_to_data_node):
+            headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+            url = f'http://{ip_address}/command/finish_shuffle'  # noqa
+            data_to_data_node = {
+                "data_to_data_node": data_to_data_node
+            }
+            # data_to_data_node["data_nodes"] = data_nodes
+            try:
+                async with session.request(url=url,
+                                           headers=headers,
+                                           json=data_to_data_node,
+                                           timeout=10,
+                                           method="POST") as resp:
+                    return await resp.json(content_type=None)
+            except asyncio.exceptions.TimeoutError:
+                pass
+
+        tasks = []
+        for data_node in data_nodes:
+            tasks.append(asyncio.ensure_future(send_request(data_node, content[data_node])))
+
+        await asyncio.gather(*tasks)
 
 
 async def clear_data(clear_data_request: schemas.ClearDataRequest):
