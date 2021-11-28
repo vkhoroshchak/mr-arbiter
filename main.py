@@ -1,7 +1,9 @@
 import datetime
 import traceback
+from aiohttp import ClientSession
 from fastapi import FastAPI, HTTPException, status
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 
 import schemas
 from communication import send_requests
@@ -128,7 +130,9 @@ async def get_file_name(content: dict):
 @app.post("/command/map")
 async def start_map_phase(map_request: schemas.StartMapPhaseRequest):
     logger.info(jsonable_encoder(map_request))
-    await send_requests.start_map_phase(map_request)
+    resp = await send_requests.start_map_phase(map_request)
+    # return JSONResponse("Map request has been processed on arbiter!")
+    return JSONResponse(resp)
 
 
 @app.post("/command/shuffle")
@@ -137,21 +141,52 @@ async def start_shuffle_phase(shuffle_request: schemas.StartShufflePhaseRequest)
         logger.info(jsonable_encoder(shuffle_request))
         shuffle_db_manager = ShuffleDBManager()
         shuffle_db_manager.add_new_record(shuffle_request.file_id)
-        await send_requests.min_max_hash(shuffle_request)
+        data_nodes = FileDBManager().get_list_of_data_nodes_ip_addresses(shuffle_request.file_id)
+        min_max_hash_response = await send_requests.min_max_hash(shuffle_request, data_nodes)
+        logger.info(f"{min_max_hash_response=}")
+        hash_response = {}
+        for data_node in data_nodes:
+            hash_response[data_node["data_node_address"]] = await generate_hash_ranges(schemas.HashRequest.parse_obj(
+                min_max_hash_response[data_node["data_node_address"]]))
+        logger.info(f"{hash_response=}")
+        for x in hash_response:
+            if hash_response[x]:
+                hash_response = hash_response[x]
+        # hash_response = {hash_response[x] for x in hash_response if hash_response[x]}
+        hash_response = hash_response["data_to_data_node"]
+        logger.info(f"FINAL {hash_response=}")
+        async with ClientSession() as session:
+            shuffle_response = {}
+            for data_node in data_nodes:
+                shuffle_response[data_node["data_node_address"]] = await send_requests.send_request(
+                    session, data_node["data_node_address"], "shuffle", hash_response)
+        logger.info(f"{shuffle_response=}")
+        for data_node in data_nodes:
+            if shuffle_response[data_node["data_node_address"]]:
+                await send_requests.finish_shuffle(shuffle_response[data_node["data_node_address"]])
+        return JSONResponse("shuffle should be done by now")
     except Exception as e:
         logger.info("Caught exception!" + str(e))
         logger.error(e, exc_info=True)
 
 
+# @app.post("/command/finish_shuffle")
+# async def finish_shuffle(content):
+#     pass
+
+
 @app.post("/command/hash")
 async def generate_hash_ranges(hash_request: schemas.HashRequest):
-    await send_requests.generate_hash_ranges(hash_request)
+    response = await send_requests.generate_hash_ranges(hash_request)
+    return response
+    # return await send_request_to_data_nodes(response["data_to_data_node"], 'shuffle',
+    #                                         data_nodes=response["data_nodes_ip_addresses"])
 
 
 @app.post("/command/reduce")
 async def start_reduce_phase(reduce_request: schemas.StartReducePhaseRequest):
     logger.info(jsonable_encoder(reduce_request))
-    await send_requests.start_reduce_phase(reduce_request)
+    return await send_requests.start_reduce_phase(reduce_request)
 
 
 @app.post("/command/clear_data")
