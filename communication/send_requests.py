@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import traceback
 from aiohttp import ClientSession
 
 import schemas
