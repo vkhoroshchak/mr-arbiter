@@ -78,9 +78,10 @@ async def send_request_to_data_nodes(data_to_data_node, command, data_nodes=conf
 
 
 async def start_map_phase(map_request):
+    data_nodes = FileDBManager().get_list_of_data_nodes_ip_addresses(map_request.file_id)
+    logger.info(f"{data_nodes=}")
     return await send_request_to_data_nodes(map_request.__dict__, 'map',
-                                            data_nodes=FileDBManager().get_list_of_data_nodes_ip_addresses(
-                                                map_request.file_id))
+                                            data_nodes=data_nodes)
 
 
 async def start_reduce_phase(reduce_request):
