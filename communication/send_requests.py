@@ -25,7 +25,7 @@ async def check_if_file_is_on_cluster(content, data_nodes=config.data_nodes):
                     async with session.request(url=url,
                                                headers=headers,
                                                json=content,
-                                               timeout=10,
+                                               timeout=100,
                                                method="GET") as resp:
                         response = await resp.json(content_type=None)
                         if response['is_file_on_data_node']:
@@ -46,7 +46,7 @@ async def send_request(session, ip_address, command, data_to_data_node, method="
         async with session.request(url=url,
                                    headers=headers,
                                    json=data_to_data_node,
-                                   timeout=10,
+                                   timeout=100,
                                    method=method) as resp:
             return await resp.json(content_type=None)
     except asyncio.exceptions.TimeoutError:
@@ -103,11 +103,13 @@ async def min_max_hash(shuffle_request: schemas.StartShufflePhaseRequest, data_n
                     async with session.request(url=url,
                                                headers=headers,
                                                json=content,
-                                               timeout=10,
+                                               timeout=100,
                                                method="POST") as resp:
                         response = await resp.json(content_type=None)
+                        logger.info(f"{response=}")
                         min_max_hash_response[data_node["data_node_address"]] = response
                 except asyncio.exceptions.TimeoutError:
+                    logger.info("caught asyncio.exceptions.TimeoutError!")
                     pass
             return min_max_hash_response
     except Exception as e:
@@ -129,7 +131,7 @@ async def generate_hash_ranges(hash_request: schemas.HashRequest):
         shuffle_db_obj["updated_at"] = datetime.datetime.now().isoformat()
         shuffle_db_manager.save(hash_request.file_id, shuffle_db_obj)
 
-        logger.info(f"Data nodes processed: {shuffle_db_obj['data_nodes_processed']}")
+        # logger.info(f"Data nodes processed: {shuffle_db_obj['data_nodes_processed']}")
 
         file_db_manager = FileDBManager()
         file_db_obj = file_db_manager.get(hash_request.file_id)
@@ -166,7 +168,7 @@ async def generate_hash_ranges(hash_request: schemas.HashRequest):
             file_db_obj["updated_at"] = datetime.datetime.now().isoformat()
             file_db_manager.save(hash_request.file_id, file_db_obj)
 
-            logger.info(f"Data to data nodes: {data_to_data_node}")
+            # logger.info(f"Data to data nodes: {data_to_data_node}")
             logger.info("Sending data to data nodes")
             response = {
                 "data_to_data_node": data_to_data_node,
@@ -195,7 +197,7 @@ async def finish_shuffle(content):
                 async with session.request(url=url,
                                            headers=headers,
                                            json=data_to_data_node,
-                                           timeout=10,
+                                           timeout=100,
                                            method="POST") as resp:
                     return await resp.json(content_type=None)
             except asyncio.exceptions.TimeoutError:
