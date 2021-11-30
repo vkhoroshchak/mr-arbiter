@@ -1,10 +1,8 @@
 import datetime
 import json
 import redis
-import traceback
 import uuid
 
-from config.config_provider import config
 from config.logger import arbiter_logger
 
 logger = arbiter_logger.get_logger(__name__)
