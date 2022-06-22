@@ -20,7 +20,7 @@ Mako==1.1.4
 MarkupSafe==1.1.1
 multidict==5.1.0
 nodeenv==1.6.0
-numpy==1.20.2
+numpy==1.22.0
 pandas==1.2.4
 pre-commit==2.12.1
 pycodestyle==2.7.0
